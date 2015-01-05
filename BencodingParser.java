@@ -39,20 +39,33 @@ public class BencodingParser {
         int open = 1;
         int close = 0;
         ArrayList out = new ArrayList();
-        for (int i = 1; i < data.length(); i++) {
+        for (int i = 1; i < data.length()-1; i++ ) {
             char c = data.charAt(i);
-            if (c == 'i') {
+            if (c == 'i' || (c > '0' && c < '9')) {
+                boolean integer = (c == 'i');
                 int opening_index = i;
-                while (c != 'e') {
+                char target = integer ? 'e' : ':' ;
+                while (c != target) {
                     i++;
                     if (i == data.length()) {
                         throw new IllegalArgumentException("Data must be valid bencoded list.");
                     }
                     c = data.charAt(i);
                 }
-
+                // at this point i is at the position of the closing e or the :
+                if (!integer) {
+                    int length = Integer.parseInt(data.substring(opening_index, i));
+                    i += length; // moves i to the last character of the word
+                }
+                String chunk = data.substring(opening_index,i+1);
+                if (integer) {
+                    out.add(parseInt(chunk));
+                } else {
+                    out.add(parseString(chunk));
+                }
             }
         }
+        return out;
     }
     // public HashMap parseHash(String data) {
     //     if (data.charAt(0) != 'd' || data.charAt(data.length() - 1) != 'e') {
@@ -82,8 +95,11 @@ public class BencodingParser {
     public static void main(String[] args) {
         BencodingParser bp = new BencodingParser();
         System.out.println(bp.parseInt("i43e"));
+        System.out.println(bp.parseInt("i124e"));
         System.out.println(bp.parseString("4:cats"));
         // System.out.println(bp.parseString("5:cats"));
-        System.out.println(bp.parseString("cats"));
+        // System.out.println(bp.parseString("cats"));
+        ArrayList out = bp.parseList("l4:cats6:iamsof0:4:dogs2:hiei0e");
+        String empty = bp.parseString("0:");
     }
 }
