@@ -6,7 +6,13 @@ public class BencodingParser {
         if (data.charAt(0) != 'i' || data.charAt(data.length() - 1) != 'e') {
             throw new IllegalArgumentException("Data must be valid bencoded integer.");
         }
-        return Integer.parseInt(data.substring(1, data.length() - 1));
+        int out;
+        try {
+            out = Integer.parseInt(data.substring(1, data.length() - 1));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Data must be valid bencoded integer.");
+        }
+        return out;
     }
 
     public String parseString(String data) {
@@ -26,8 +32,27 @@ public class BencodingParser {
         return data.substring(sepIndex + 1);
     }
 
-    public Object[] parseArray(String data) {
-        return new Object[0];
+    public ArrayList parseList(String data) {
+        if (data.charAt(0) != 'l') {
+            throw new IllegalArgumentException("Data must be valid bencoded list.");
+        }
+        int open = 1;
+        int close = 0;
+        ArrayList out = new ArrayList();
+        for (int i = 1; i < data.length(); i++) {
+            char c = data.charAt(i);
+            if (c == 'i') {
+                int opening_index = i;
+                while (c != 'e') {
+                    i++;
+                    if (i == data.length()) {
+                        throw new IllegalArgumentException("Data must be valid bencoded list.");
+                    }
+                    c = data.charAt(i);
+                }
+
+            }
+        }
     }
     // public HashMap parseHash(String data) {
     //     if (data.charAt(0) != 'd' || data.charAt(data.length() - 1) != 'e') {
