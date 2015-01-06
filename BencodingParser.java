@@ -93,6 +93,7 @@ public class BencodingParser {
     private void throwError(String type) {
         throw new IllegalArgumentException("Data must be valid bencoded " + type + ".");
     }
+    
     public int parseInt(String data) {
         if (data.charAt(0) != 'i' || data.charAt(data.length() - 1) != 'e') {
             throwError("integer");
@@ -111,7 +112,6 @@ public class BencodingParser {
         }
         return data.substring(sepIndex + 1);
     }
-
 
     public ArrayList parseList(String data) {
         if (data.charAt(0) != 'l') {
@@ -156,9 +156,8 @@ public class BencodingParser {
                 // else if (chunk.dictionary)  { out.add(parseDictionary(toParse)); }
             }
         }
-    return out;
+        return out;
     }
-
 
     public static void main(String[] args) {
         BencodingParser bp = new BencodingParser();
