@@ -164,7 +164,7 @@ public class BencodingParser {
         return parseMany(data.substring(1, data.length()-1));
     }
 
-    public HashMap parseDictionary(String data) {
+    public TreeMap parseDictionary(String data) {
         if (data.charAt(0) != 'd') {
             throwError("list");
         }
@@ -172,7 +172,7 @@ public class BencodingParser {
         if (parsed.size() % 2 == 1) {
             throwError("list");
         }
-        HashMap out = new HashMap();
+        TreeMap out = new TreeMap();
         for (int i = 0; i < parsed.size(); i+=2) {
             out.put(parsed.get(i), parsed.get(i+1));
         }
@@ -189,7 +189,7 @@ public class BencodingParser {
         ArrayList out = bp.parseList("l4:cats6:iamsofllelelllli0eeeeei12e2:noi1ee4:dogs3:hiei0ee");
         System.out.println(out);
         String dict = "d3:onei1e3:twoi2e5:threei3e4:listli1ei2ei3eee";
-        HashMap out2 = bp.parseDictionary("d4:meta"+dict+"e");
+        TreeMap out2 = bp.parseDictionary("d4:meta"+dict+"e");
         System.out.println(out2);
     }
 }
