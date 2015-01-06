@@ -87,51 +87,35 @@ class emptyChunk extends Chunk {
 }
 
 public class BencodingParser {
+
+    private boolean isDigit(char c) { return (c >= '0' && c <= '9'); }
+
+    private void throwError(String type) {
+        throw new IllegalArgumentException("Data must be valid bencoded " + type + ".");
+    }
     public int parseInt(String data) {
         if (data.charAt(0) != 'i' || data.charAt(data.length() - 1) != 'e') {
-            throw new IllegalArgumentException("Data must be valid bencoded integer.");
+            throwError("integer");
         }
-        int out;
-        try {
-            out = Integer.parseInt(data.substring(1, data.length() - 1));
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Data must be valid bencoded integer.");
-        }
-        return out;
+        return Integer.parseInt(data.substring(1, data.length() - 1));
     }
 
     public String parseString(String data) {
         int sepIndex = data.indexOf(":");
         if (sepIndex < 0) {
-            throw new IllegalArgumentException("Data must be valid bencoded string.");
+            throwError("string");
         }
-        int length;
-        try {
-            length = Integer.parseInt(data.substring(0, sepIndex));
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Data must be valid bencoded string.", e);
-        }
+        int length = Integer.parseInt(data.substring(0, sepIndex));
         if ( length != data.length() - (sepIndex+1) )  { // check that length matches
-            throw new IllegalArgumentException("Length given must match length of string.");
+            throwError("string");
         }
         return data.substring(sepIndex + 1);
     }
 
-    private void checkLength(int i, String data) {
-        if (i == data.length()) {
-            throw new IllegalArgumentException("Data must be valid bencoded list.");
-        }
-    }
-
-    private boolean isDigit(char c) { return (c >= '0' && c <= '9'); }
-
-    private void throwError() {
-        throw new IllegalArgumentException("Data must be valid bencoded list.");
-    }
 
     public ArrayList parseList(String data) {
         if (data.charAt(0) != 'l') {
-            throwError();
+            throwError("list");
         }
         ArrayList out = new ArrayList();
         Stack stack = new Stack();
@@ -147,7 +131,7 @@ public class BencodingParser {
                 } else if (c == 'd') {
                     stack.push(new Chunk(Type.DICTIONARY, i));
                 } else if (c != 'e') {
-                    throwError();
+                    throwError("list");
                 }
             }
             if (stack.active().isEnding(c)) {
