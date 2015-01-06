@@ -113,13 +113,10 @@ public class BencodingParser {
         return data.substring(sepIndex + 1);
     }
 
-    public ArrayList parseList(String data) {
-        if (data.charAt(0) != 'l') {
-            throwError("list");
-        }
+    private ArrayList parseMany(String data) {
         ArrayList out = new ArrayList();
         Stack stack = new Stack();
-        for (int i = 1; i < data.length()-1; i++ ) {
+        for (int i = 0; i < data.length(); i++ ) {
             char c = data.charAt(i);
             if (stack.active().nested) { // we are not in an atomic chunk
                 if (c == 'i') {
@@ -149,12 +146,35 @@ public class BencodingParser {
                         out.add(parseString(toParse));
                     } else if (stack.active().list) {
                         out.add(parseList(toParse));
+                    } else if (stack.active().dictionary) {
+                        out.add(parseDictionary(toParse));
                     }
                 }
 
                 stack.pop(); // will always be okay because isEnding so not empty so >= 1
-                // else if (chunk.dictionary)  { out.add(parseDictionary(toParse)); }
             }
+        }
+        return out;
+    }
+
+    public ArrayList parseList(String data) {
+        if (data.charAt(0) != 'l') {
+            throwError("list");
+        }
+        return parseMany(data.substring(1, data.length()-1));
+    }
+
+    public HashMap parseDictionary(String data) {
+        if (data.charAt(0) != 'd') {
+            throwError("list");
+        }
+        ArrayList parsed = parseMany(data.substring(1, data.length()-1));
+        if (parsed.size() % 2 == 1) {
+            throwError("list");
+        }
+        HashMap out = new HashMap();
+        for (int i = 0; i < parsed.size(); i+=2) {
+            out.put(parsed.get(i), parsed.get(i+1));
         }
         return out;
     }
@@ -168,5 +188,8 @@ public class BencodingParser {
         // System.out.println(bp.parseString("cats"));
         ArrayList out = bp.parseList("l4:cats6:iamsofllelelllli0eeeeei12e2:noi1ee4:dogs3:hiei0ee");
         System.out.println(out);
+        String dict = "d3:onei1e3:twoi2e5:threei3e4:listli1ei2ei3eee";
+        HashMap out2 = bp.parseDictionary("d4:meta"+dict+"e");
+        System.out.println(out2);
     }
 }
