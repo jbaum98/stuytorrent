@@ -1,6 +1,91 @@
 import java.io.*;
 import java.util.*;
 
+class Stack {
+    private final static Chunk EMPTY = new emptyChunk();
+    ArrayList<Chunk> stack;
+
+    public Stack() {
+        stack = new ArrayList<Chunk>();
+    }
+
+    public boolean push(Chunk chunk) {
+        return stack.add(chunk);
+    }
+
+    public Chunk pop() {
+        if (stack.size() > 0) {
+            return stack.remove(stack.size() - 1);
+        } else {
+            return null;
+        }
+    }
+
+    public Chunk active() {
+        if (stack.size() > 0) {
+            return stack.get(stack.size() -1);
+        } else {
+            return EMPTY;
+        }
+    }
+
+    public boolean single() {
+        return stack.size() <= 1;
+    }
+
+    public String toString() { return stack.toString(); }
+}
+
+enum Type {
+    INTEGER(false, 'e'), STRING(false, ':'), LIST(true, 'e'), DICTIONARY(true,'e');
+    public final boolean nested;
+    public final char ending;
+    Type(boolean nested, Character ending) {
+        this.nested = nested;
+        this.ending = ending;
+    }
+}
+
+class Chunk {
+    public final Type type;
+    public final Integer start;
+    public final boolean nested;
+    public final boolean integer;
+    public final boolean string;
+    public final boolean list;
+    public final boolean dictionary;
+
+    public Chunk(Type type, Integer start) {
+        this.type       = type;
+        this.start      = start;
+        this.nested     = type.nested;
+        this.integer    = type == Type.INTEGER;
+        this.string     = type == Type.STRING;
+        this.list       = type == Type.LIST;
+        this.dictionary = type == Type.DICTIONARY;
+    }
+    public Chunk() {
+        this.type       = null;
+        this.start      = null;
+        this.nested     = true; // so doesn't inhibit new chunks being added to stack
+        this.integer    = false;
+        this.string     = false;
+        this.list       = false;
+        this.dictionary = false;
+    }
+
+    public boolean isEnding(char c) { return c == type.ending; }
+
+    public String toString() {
+        return type.toString() + ": " + start;
+    }
+}
+
+class emptyChunk extends Chunk {
+    public boolean isEnding(char c) { return false; }
+    public String toString() { return "EMPTY"; }
+}
+
 public class BencodingParser {
     public int parseInt(String data) {
         if (data.charAt(0) != 'i' || data.charAt(data.length() - 1) != 'e') {
@@ -32,65 +117,64 @@ public class BencodingParser {
         return data.substring(sepIndex + 1);
     }
 
-    public ArrayList parseList(String data) {
-        if (data.charAt(0) != 'l') {
+    private void checkLength(int i, String data) {
+        if (i == data.length()) {
             throw new IllegalArgumentException("Data must be valid bencoded list.");
         }
-        int open = 1;
-        int close = 0;
+    }
+
+    private boolean isDigit(char c) { return (c >= '0' && c <= '9'); }
+
+    private void throwError() {
+        throw new IllegalArgumentException("Data must be valid bencoded list.");
+    }
+
+    public ArrayList parseList(String data) {
+        if (data.charAt(0) != 'l') {
+            throwError();
+        }
         ArrayList out = new ArrayList();
+        Stack stack = new Stack();
         for (int i = 1; i < data.length()-1; i++ ) {
             char c = data.charAt(i);
-            if (c == 'i' || (c > '0' && c < '9')) {
-                boolean integer = (c == 'i');
-                int opening_index = i;
-                char target = integer ? 'e' : ':' ;
-                while (c != target) {
-                    i++;
-                    if (i == data.length()) {
-                        throw new IllegalArgumentException("Data must be valid bencoded list.");
-                    }
-                    c = data.charAt(i);
-                }
-                // at this point i is at the position of the closing e or the :
-                if (!integer) {
-                    int length = Integer.parseInt(data.substring(opening_index, i));
-                    i += length; // moves i to the last character of the word
-                }
-                String chunk = data.substring(opening_index,i+1);
-                if (integer) {
-                    out.add(parseInt(chunk));
-                } else {
-                    out.add(parseString(chunk));
+            if (stack.active().nested) { // we are not in an atomic chunk
+                if (c == 'i') {
+                    stack.push(new Chunk(Type.INTEGER, i));
+                } else if (isDigit(c)) {
+                    stack.push(new Chunk(Type.STRING, i));
+                } else if (c == 'l') {
+                    stack.push(new Chunk(Type.LIST, i));
+                } else if (c == 'd') {
+                    stack.push(new Chunk(Type.DICTIONARY, i));
+                } else if (c != 'e') {
+                    throwError();
                 }
             }
+            if (stack.active().isEnding(c)) {
+                if (stack.active().string){
+                    int length = Integer.parseInt(data.substring(stack.active().start, i));
+                    i += length; // now i is one past at last character of string
+                }
+
+                if (stack.single()) { // we can write straight to out
+                    String toParse = data.substring(stack.active().start, i+1);
+
+                    if (stack.active().integer) {
+                        out.add(parseInt(toParse));
+                    } else if (stack.active().string) {
+                        out.add(parseString(toParse));
+                    } else if (stack.active().list) {
+                        out.add(parseList(toParse));
+                    }
+                }
+
+                stack.pop(); // will always be okay because isEnding so not empty so >= 1
+                // else if (chunk.dictionary)  { out.add(parseDictionary(toParse)); }
+            }
         }
-        return out;
+    return out;
     }
-    // public HashMap parseHash(String data) {
-    //     if (data.charAt(0) != 'd' || data.charAt(data.length() - 1) != 'e') {
-    //         throw new IllegalArgumentException("Data must be valid bencoded hash.");
-    //     }
-    //     HashMap out = new HashMap();
-    //     int start = 0;
-    //     boolean key = false;
-    //     for (int i = 0; i < data.length(); i++) {
-    //         char first = data.charAt(start);
-    //         if (first == 'i') {
-    //             int closingIndex = data.indexOf("e", start);
-    //             if (closingIndex == -1) {
-    //                 throw new IllegalArgumentException("Data must be valid bencoded hash.");
-    //             } else {
-    //                 out.add(data.substring(0, closingIndex));
-    //                 i = closingIndex;
-    //             }
-    //         } else if (first > '0' && first < '9') { // checks if first is a digit
-    //             int sepIndex = data.indexOf(":", start);
-    //             // int length = data.
-    //         }
-    //     }
-    //     return soFar;
-    // }
+
 
     public static void main(String[] args) {
         BencodingParser bp = new BencodingParser();
@@ -99,7 +183,7 @@ public class BencodingParser {
         System.out.println(bp.parseString("4:cats"));
         // System.out.println(bp.parseString("5:cats"));
         // System.out.println(bp.parseString("cats"));
-        ArrayList out = bp.parseList("l4:cats6:iamsof0:4:dogs2:hiei0e");
-        String empty = bp.parseString("0:");
+        ArrayList out = bp.parseList("l4:cats6:iamsofllelelllli0eeeeei12e2:noi1ee4:dogs3:hiei0ee");
+        System.out.println(out);
     }
 }
