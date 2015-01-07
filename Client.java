@@ -6,8 +6,8 @@ import java.net.Socket;
 public class Client implements Runnable {
     protected int listeningPort;
     protected ServerSocket listeningSocket;
-    protected boolean isStopped = false;
-    protected ArrayList<PeerRunner> peers = new ArrayList<PeerRunner>();
+    protected volatile boolean isStopped = false;
+    protected volatile ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
 
     public Client(int listeningPort){
         this.listeningPort = listeningPort;
@@ -16,14 +16,14 @@ public class Client implements Runnable {
     public void run() {
         startListen();
 
-        while (! isStopped()) {
+        while (! isStopped) {
             Socket peerSocket = null;
             try {
                 peerSocket = listeningSocket.accept();
             } catch (IOException e) {
                 throw new RuntimeException("Error accepting client connection", e);
             }
-            startPeerRunner(peerSocket);
+            if (peerSocket != null) { addPeer(peerSocket); }
         }
     }
 
@@ -35,18 +35,9 @@ public class Client implements Runnable {
         }
     }
 
-    private void startPeerRunner(Socket peerSocket) {
+    private void addPeer(Socket peerSocket) {
         PeerRunner runner = new PeerRunner(peerSocket);
-        addPeer(runner);
-        new Thread(runner).start();
-    }
-
-    private synchronized boolean isStopped() {
-        return isStopped;
-    }
-
-    private synchronized boolean addPeer(PeerRunner peer) {
-        return peers.add(peer);
+        (new Thread(runner)).start();
     }
 
     public synchronized void stop(){
@@ -65,7 +56,20 @@ public class Client implements Runnable {
         } catch (IOException e) {
             throw new RuntimeException("Cannot open connection to " + hostname + " on port " + peerPort, e);
         }
-        startPeerRunner(peerSocket);
+        addPeer(peerSocket);
+    }
+}
+
+class PeerRunner implements Runnable {
+    Peer peer;
+    ArrayList<Peer> peers;
+    public PeerRunner(Socket socket) {
+        peer = new Peer(socket);
+    }
+    public void run() {
+        synchronized (peers) {
+            peers.add(peer);
+        }
     }
 }
 
