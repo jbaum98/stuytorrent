@@ -6,8 +6,8 @@ import java.net.Socket;
 public class Client implements Runnable {
     protected int listeningPort;
     protected ServerSocket listeningSocket;
-    protected volatile boolean isStopped = false;
-    protected volatile ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
+    public volatile boolean isStopped = false;
+    public volatile ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
 
     public Client(int listeningPort){
         this.listeningPort = listeningPort;
@@ -36,7 +36,7 @@ public class Client implements Runnable {
     }
 
     private void addPeer(Socket peerSocket) {
-        PeerRunner runner = new PeerRunner(peerSocket);
+        PeerRunner runner = new PeerRunner(peerSocket, peers);
         (new Thread(runner)).start();
     }
 
@@ -49,7 +49,7 @@ public class Client implements Runnable {
         }
     }
 
-    public void connect(String hostname, int peerPort) {
+    public synchronized void connect(String hostname, int peerPort) {
         Socket peerSocket = null;
         try {
             peerSocket = new Socket(hostname, peerPort);
@@ -58,13 +58,20 @@ public class Client implements Runnable {
         }
         addPeer(peerSocket);
     }
+
+    public synchronized void sendToAllPeers(String message) {
+        for (Peer peer : peers) {
+            peer.send(message);
+        }
+    }
 }
 
 class PeerRunner implements Runnable {
     Peer peer;
     ArrayList<Peer> peers;
-    public PeerRunner(Socket socket) {
-        peer = new Peer(socket);
+    public PeerRunner(Socket socket, ArrayList<Peer> peers) {
+        this.peer = new Peer(socket);
+        this.peers = peers;
     }
     public void run() {
         synchronized (peers) {

@@ -17,4 +17,8 @@ public class Peer {
         Sender sender = new Sender(socket, message);
         (new Thread(sender)).start();
     }
+
+    public String toString() {
+        return ""+socket.getLocalSocketAddress();
+    }
 }
