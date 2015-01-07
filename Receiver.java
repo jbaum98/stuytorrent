@@ -1,7 +1,6 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Receiver implements Runnable {
