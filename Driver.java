@@ -34,6 +34,7 @@ public class Driver {
                 System.out.print(prompt);
             }
         } catch (Exception e) {throw e;}
+        client.stop();
     }
 
     private static String firstWord(String input) {

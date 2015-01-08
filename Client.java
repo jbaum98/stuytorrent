@@ -6,8 +6,8 @@ import java.net.Socket;
 public class Client implements Runnable {
     protected int listeningPort;
     protected ServerSocket listeningSocket;
-    public volatile boolean isStopped = false;
-    public volatile ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
+    public boolean running = true;
+    public ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
 
     public Client(int listeningPort){
         this.listeningPort = listeningPort;
@@ -16,7 +16,7 @@ public class Client implements Runnable {
     public void run() {
         startListen();
 
-        while (! isStopped) {
+        while (isRunning()) {
             Socket peerSocket = null;
             try {
                 peerSocket = listeningSocket.accept();
@@ -40,10 +40,13 @@ public class Client implements Runnable {
         (new Thread(runner)).start();
     }
 
+    private synchronized boolean isRunning() { return running;}
+
     public synchronized void stop(){
-        this.isStopped = true;
+        running = false;
         try {
-            this.listeningSocket.close();
+            listeningSocket.close();
+            closeAllPeers();
         } catch (IOException e) {
             throw new RuntimeException("Error closing client", e);
         }
@@ -64,18 +67,29 @@ public class Client implements Runnable {
             peer.send(message);
         }
     }
+
+    public synchronized void closeAllPeers() throws IOException {
+        for (Peer peer : peers) {
+            peer.close();
+        }
+    }
 }
 
 class PeerRunner implements Runnable {
-    Peer peer;
+    Peer peer = null;
     ArrayList<Peer> peers;
     public PeerRunner(Socket socket, ArrayList<Peer> peers) {
-        this.peer = new Peer(socket);
+        try {
+            this.peer = new Peer(socket);
+        } catch (IOException e) {
+            System.out.println("Error createing peer for " + socket);
+            System.out.println(e.getMessage());
+        }
         this.peers = peers;
     }
     public void run() {
         synchronized (peers) {
-            peers.add(peer);
+            if (peer != null) {peers.add(peer);}
         }
     }
 }

@@ -3,19 +3,17 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Sender implements Runnable {
-    private Socket socket;
+    private Peer peer;
     private String message;
 
-    public Sender(Socket socket, String message) {
+    public Sender(Peer peer, String message) {
+        this.peer = peer;
         this.message = message;
-        this.socket = socket;
     }
 
     public void run() {
-        try (PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
-            out.println(message);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
+        synchronized (peer.out) {
+            peer.out.println(message);
         }
     }
 }
