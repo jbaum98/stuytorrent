@@ -3,20 +3,19 @@ import java.util.ArrayList;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class Client implements Runnable {
+public class Client extends Runner {
     protected int listeningPort;
     protected ServerSocket listeningSocket;
-    public boolean running = true;
-    public ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
+    public volatile ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
 
     public Client(int listeningPort){
         this.listeningPort = listeningPort;
+
+        startListen();
     }
 
-    public void run() {
-        startListen();
+    public void task() {
 
-        while (isRunning()) {
             Socket peerSocket = null;
             try {
                 peerSocket = listeningSocket.accept();
@@ -24,7 +23,6 @@ public class Client implements Runnable {
                 throw new RuntimeException("Error accepting client connection", e);
             }
             if (peerSocket != null) { addPeer(peerSocket); }
-        }
     }
 
     private void startListen() {
@@ -39,8 +37,6 @@ public class Client implements Runnable {
         PeerRunner runner = new PeerRunner(peerSocket, peers);
         (new Thread(runner)).start();
     }
-
-    private synchronized boolean isRunning() { return running;}
 
     public synchronized void stop(){
         running = false;

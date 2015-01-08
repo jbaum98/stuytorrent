@@ -12,6 +12,8 @@ public class Peer implements Closeable {
     public  Socket          socket;
     private Receiver        receiver;
     private Thread          receiverThread;
+    private Sender          sender;
+    private Thread          senderThread;
     public  PrintWriter     out;
     public  BufferedReader  in;
 
@@ -22,16 +24,26 @@ public class Peer implements Closeable {
     }
 
     public void open() throws IOException {
-        out = new PrintWriter(socket.getOutputStream(), true);
+        startReceiver();
+        startSender();
+    }
+
+    private void startReceiver() throws IOException {
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         receiver = new Receiver(this);
         receiverThread = new Thread(receiver);
         receiverThread.start();
     }
 
+    private void startSender() throws IOException {
+        out = new PrintWriter(socket.getOutputStream(), true);
+        sender = new Sender(this);
+        senderThread = new Thread(sender);
+        senderThread.start();
+    }
+
     public void send(String message) {
-        Sender sender = new Sender(this, message);
-        (new Thread(sender)).start();
+        sender.send(message);
     }
 
     public String toString() {

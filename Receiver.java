@@ -3,24 +3,24 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.Socket;
 
-public class Receiver implements Runnable {
+public class Receiver extends Runner {
     private Peer peer;
-    private boolean running = true;
 
     public Receiver(Peer peer) {
         this.peer = peer;
-        System.out.println("made a receiver with peer " + peer);
     }
 
-    public void run() {
+    public void task() {
         try {
             String received;
-            while (isRunning()) {
-                synchronized (peer.in) {
-                    received = peer.in.readLine();
-                }
-                if (received == null) { stop(); }
-                else { System.out.println(received + " from " + peer); }
+            synchronized (peer.in) {
+                received = peer.in.readLine();
+            }
+            if (received == null) {
+                stop();
+            }
+            else {
+                System.out.println(received + " from " + peer);
             }
         } catch (IOException e) {
             System.out.println("Error on reading from " + peer);

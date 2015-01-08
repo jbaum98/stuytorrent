@@ -1,19 +1,29 @@
+import java.util.ArrayList;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.net.Socket;
 
-public class Sender implements Runnable {
+public class Sender extends Runner {
     private Peer peer;
-    private String message;
+    public volatile ArrayList<String> messages = new ArrayList<String>();
 
-    public Sender(Peer peer, String message) {
+    public Sender(Peer peer) {
         this.peer = peer;
-        this.message = message;
     }
 
-    public void run() {
-        synchronized (peer.out) {
-            peer.out.println(message);
+    public void task() {
+        if (messages.size() > 0) {
+            peer.out.println(pop());
+        }
+    }
+
+    private String pop() {
+        return messages.remove(messages.size() - 1);
+    }
+
+    public void send(String message) {
+        synchronized(messages) {
+            messages.add(message);
         }
     }
 }
