@@ -6,7 +6,7 @@ import java.net.Socket;
 public class Client extends LoopThread {
     protected int listeningPort;
     protected ServerSocket listeningSocket;
-    public volatile ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
+    private ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
 
     public Client(int listeningPort){
         this.listeningPort = listeningPort;
@@ -65,6 +65,10 @@ public class Client extends LoopThread {
         for (Peer peer : peers) {
             peer.close();
         }
+    }
+
+    public Peer[] getPeers() {
+        return peers.toArray(new Peer[0]);
     }
 }
 

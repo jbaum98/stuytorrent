@@ -49,7 +49,7 @@ public class Driver {
     }
 
     private static void printPeers() {
-        for (Peer peer : client.peers) {
+        for (Peer peer : client.getPeers()) {
             System.out.println(peer);
         }
     }
