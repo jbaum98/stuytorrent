@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class Client extends Runner {
+public class Client extends LoopThread {
     protected int listeningPort;
     protected ServerSocket listeningSocket;
     public volatile ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
@@ -14,15 +14,14 @@ public class Client extends Runner {
         startListen();
     }
 
-    public void task() {
-
-            Socket peerSocket = null;
-            try {
-                peerSocket = listeningSocket.accept();
-            } catch (IOException e) {
-                throw new RuntimeException("Error accepting client connection", e);
-            }
-            if (peerSocket != null) { addPeer(peerSocket); }
+    public void task() throws IOException {
+        Socket peerSocket = null;
+        try {
+            peerSocket = listeningSocket.accept();
+        } catch (IOException e) {
+            throw new RuntimeException("Error accepting client connection", e);
+        }
+        if (peerSocket != null) { addPeer(peerSocket); }
     }
 
     private void startListen() {
@@ -33,13 +32,11 @@ public class Client extends Runner {
         }
     }
 
-    private void addPeer(Socket peerSocket) {
-        PeerRunner runner = new PeerRunner(peerSocket, peers);
-        (new Thread(runner)).start();
+    private void addPeer(Socket peerSocket) throws IOException {
+        (new PeerRunner(peerSocket, peers)).start();
     }
 
-    public synchronized void stop(){
-        running = false;
+    public void cleanup(){
         try {
             listeningSocket.close();
             closeAllPeers();
@@ -48,7 +45,7 @@ public class Client extends Runner {
         }
     }
 
-    public synchronized void connect(String hostname, int peerPort) {
+    public void connect(String hostname, int peerPort) throws IOException {
         Socket peerSocket = null;
         try {
             peerSocket = new Socket(hostname, peerPort);
@@ -71,16 +68,12 @@ public class Client extends Runner {
     }
 }
 
-class PeerRunner implements Runnable {
+class PeerRunner extends Thread {
     Peer peer = null;
     ArrayList<Peer> peers;
-    public PeerRunner(Socket socket, ArrayList<Peer> peers) {
-        try {
-            this.peer = new Peer(socket);
-        } catch (IOException e) {
-            System.out.println("Error createing peer for " + socket);
-            System.out.println(e.getMessage());
-        }
+
+    public PeerRunner(Socket socket, ArrayList<Peer> peers) throws IOException {
+        this.peer = new Peer(socket);
         this.peers = peers;
     }
     public void run() {

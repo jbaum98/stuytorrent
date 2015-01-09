@@ -11,8 +11,7 @@ public class Driver {
         }
         int port = Integer.parseInt(args[0]);
         client = new Client(port);
-        Thread clientThread = new Thread(client);
-        clientThread.start();
+        client.start();
         String input;
 
         System.out.print(prompt);
@@ -34,7 +33,7 @@ public class Driver {
                 System.out.print(prompt);
             }
         } catch (Exception e) {throw e;}
-        client.stop();
+        client.interrupt();
     }
 
     private static String firstWord(String input) {
@@ -43,7 +42,7 @@ public class Driver {
         return input.substring(0,firstSpace);
     }
 
-    private static void connect(String portsString) {
+    private static void connect(String portsString) throws IOException {
         for (String port : portsString.split(" ")) {
             if (port.length()> 0) {client.connect("localhost", Integer.parseInt(port));}
         }
