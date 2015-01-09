@@ -9,7 +9,6 @@ public class Receiver extends LoopThread {
     public BufferedReader in;
 
     public Receiver(Peer peer) throws IOException {
-        super(peer);
         this.peer = peer;
         in = new BufferedReader(new InputStreamReader(peer.socket.getInputStream()));
     }

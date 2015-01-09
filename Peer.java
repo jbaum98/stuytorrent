@@ -3,7 +3,7 @@ import java.io.IOException;
 import java.io.Closeable;
 
 // TODO .equals and .compareTo
-public class Peer implements Closeable, AutoCloseable, LoopThreadParent {
+public class Peer implements Closeable, AutoCloseable {
     public  Socket   socket;
     private Receiver receiver;
     private Sender   sender;
@@ -49,11 +49,8 @@ public class Peer implements Closeable, AutoCloseable, LoopThreadParent {
             l.interrupt();
         }
         try {
-            while (! notified) {
-                l.wait();
-            }
-        } catch (InterruptedException e) {} // because we want it to stop anyway
-        notified = false;
+            l.join();
+        } catch (InterruptedException e){} // we want it to exit
     }
 
     public void setNotified() {

@@ -10,7 +10,6 @@ public class Sender extends LoopThread {
     public LinkedBlockingQueue<String> messages = new LinkedBlockingQueue<String>();
 
     public Sender(Peer peer) throws IOException {
-        super(peer);
         this.peer = peer;
         out = new PrintWriter(peer.socket.getOutputStream(), true);
     }
