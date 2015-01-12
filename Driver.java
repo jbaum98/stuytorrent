@@ -1,3 +1,6 @@
+/*
+ * for now, opens a client and starts the "shell"
+ */
 import java.util.*;
 import java.io.*;
 
@@ -16,11 +19,11 @@ public class Driver {
 
         System.out.print(prompt);
         try (BufferedReader in = new BufferedReader( new InputStreamReader(System.in) );) {
-            while ((input = in.readLine()) != null) {
+            while ((input = in.readLine()) != null) { // read user input
                 String firstWord = firstWord(input);
-                switch (firstWord) {
+                switch (firstWord) { // check for reserved words
                     case "connect":
-                        connect(input.substring(7));
+                        connect(input.substring(7)); // connect has 7 letters
                         break;
 
                     case "peers":

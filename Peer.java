@@ -1,21 +1,22 @@
+/*
+ * represents a Peer to which the Client is connected
+ * has two jobs:
+ *  - listen for incoming messages (Receiver)
+ *  - send outgoing messages (Sender)
+ * uses seperate Threads for both, see Receiver.java and Sender.java respectively
+ */
+
 import java.net.Socket;
 import java.io.IOException;
 import java.io.Closeable;
 
-// TODO .equals and .compareTo
 public class Peer implements Closeable, AutoCloseable {
     public  Socket   socket;
     private Receiver receiver;
     private Sender   sender;
-    public boolean notified = false;
-
 
     public Peer(Socket socket) throws IOException {
         this.socket = socket;
-        open();
-    }
-
-    public void open() throws IOException {
         startReceiver();
         startSender();
     }
@@ -46,14 +47,10 @@ public class Peer implements Closeable, AutoCloseable {
 
     public void closeLoopThread(LoopThread l) throws IOException {
         synchronized (l) {
-            l.interrupt();
+            l.interrupt(); // tell the thing to stop
         }
         try {
-            l.join();
-        } catch (InterruptedException e){} // we want it to exit
-    }
-
-    public void setNotified() {
-        notified = true;
+            l.join(); // wait for it to actually stop
+        } catch (InterruptedException e){} // we want it to exit so InterruptedExceptions are good
     }
 }

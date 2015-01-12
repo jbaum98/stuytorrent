@@ -1,3 +1,6 @@
+/*
+ * Listens for connections
+ */
 import java.io.IOException;
 import java.util.ArrayList;
 import java.net.ServerSocket;
@@ -6,24 +9,24 @@ import java.net.Socket;
 public class Client extends LoopThread {
     protected int listeningPort;
     protected ServerSocket listeningSocket;
-    private ArrayList<Peer> peers = new ArrayList<Peer>(); // TODO make unique and thread-safe
+    private ArrayList<Peer> peers = new ArrayList<Peer>();
 
     public Client(int listeningPort){
         this.listeningPort = listeningPort;
-
         startListen();
     }
 
-    public void task() throws IOException {
+    public void task() throws IOException { // see LoopThread.java
         Socket peerSocket = null;
         try {
-            peerSocket = listeningSocket.accept();
+            peerSocket = listeningSocket.accept(); // waits here until something tries to connect
         } catch (IOException e) {
             throw new RuntimeException("Error accepting client connection", e);
         }
         if (peerSocket != null) { addPeer(peerSocket); }
     }
 
+    /* Opens the listening port */
     private void startListen() {
         try {
             listeningSocket = new ServerSocket(listeningPort);
@@ -32,11 +35,16 @@ public class Client extends LoopThread {
         }
     }
 
+    /*
+     * starts a new thread to handle the connection
+     * this allows the Client process to spend more time listening
+     * and reduces the likelihood that it is busy when something tries to connect
+     */
     private void addPeer(Socket peerSocket) throws IOException {
-        (new PeerRunner(peerSocket, peers)).start();
+        (new PeerRunner(peerSocket, peers)).start(); // see PeerRunner at bottom of this file
     }
 
-    public void cleanup(){
+    public void cleanup(){ // see LoopThread
         try {
             listeningSocket.close();
             closeAllPeers();
@@ -45,6 +53,9 @@ public class Client extends LoopThread {
         }
     }
 
+    /*
+     * connects to another client
+     */
     public void connect(String hostname, int peerPort) throws IOException {
         Socket peerSocket = null;
         try {
@@ -72,16 +83,19 @@ public class Client extends LoopThread {
     }
 }
 
+/*
+ * this handles new peers so the Client can get back to listening
+ */
 class PeerRunner extends Thread {
     Peer peer = null;
     ArrayList<Peer> peers;
 
     public PeerRunner(Socket socket, ArrayList<Peer> peers) throws IOException {
         this.peer = new Peer(socket);
-        this.peers = peers;
+        this.peers = peers; // this is a reference to the Client's peers list
     }
     public void run() {
-        synchronized (peers) {
+        synchronized (peers) { // lock the client's peer list
             if (peer != null) {peers.add(peer);}
         }
     }

@@ -1,8 +1,12 @@
+/*
+ * abstracts the common task of having a thread that repeats the same task until it is interrupted
+ */
+
 import java.io.IOException;
 
 abstract public class LoopThread extends Thread {
 
-    protected abstract void task() throws Exception;
+    protected abstract void task() throws Exception; // the task method will be repeated until the thread is interrupted
 
     public void run() {
         try {
@@ -17,5 +21,5 @@ abstract public class LoopThread extends Thread {
         }
     }
 
-    abstract protected void cleanup() throws Exception;
+    abstract protected void cleanup() throws Exception; // cleanup is run after interrupt
 }
