@@ -31,13 +31,13 @@ class BencodingParser {
     /*
      * parse an integer
      * letter i used for integer, but we sometimes need to parse ints > 2^31
-     * so we use doubles
+     * so we use longs
      */
-    public double i() {
+    public long i() {
         int start = counter;
         int end = data.indexOf('e', counter);
         counter = end + 1;
-        return Double.parseDouble(data.substring(start+1,end));
+        return Long.parseLong(data.substring(start+1,end));
     }
 
     /*
