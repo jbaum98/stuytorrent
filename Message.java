@@ -30,12 +30,14 @@ class BencodingParser {
 
     /*
      * parse an integer
+     * letter i used for integer, but we sometimes need to parse ints > 2^31
+     * so we use doubles
      */
-    public int i() {
+    public double i() {
         int start = counter;
         int end = data.indexOf('e', counter);
         counter = end + 1;
-        return Integer.parseInt(data.substring(start+1,end));
+        return Double.parseDouble(data.substring(start+1,end));
     }
 
     /*
@@ -56,7 +58,6 @@ class BencodingParser {
         ArrayList out = new ArrayList();
         char c = data.charAt(counter);
         while (c != 'e'){
-            c = data.charAt(counter);
             if (c == 'i') {
                 out.add(i());
             } else if (isDigit(c)) {
@@ -65,12 +66,12 @@ class BencodingParser {
                 out.add(l());
             } else if (c == 'd') {
                 out.add(d());
-            } else if (c == 'e') {
-                return out;
             } else {
                 throw new IllegalArgumentException();
             }
+	    c = data.charAt(counter);
         }
+	counter++;
         return out;
     }
 
