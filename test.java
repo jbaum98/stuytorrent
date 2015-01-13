@@ -6,8 +6,7 @@ class torrent{
 
     public torrent(String filename) {
 	try{
-	    BufferedReader r = new BufferedReader(new FileReader(filename));
-	    String s = r.readLine();
+	    String s = new Scanner(new File(filename)).useDelimiter("\\A").next();
 	    info = new Message(s);
 	}catch(IOException e){
 	    e.printStackTrace();
