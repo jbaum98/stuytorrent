@@ -97,9 +97,62 @@ class BencodingParser {
     }
 }
 
+class BencodingWriter{
+
+    public String i(long l){
+        return "i"+(Long.toString(l))+"e";
+    }
+
+    public String s(String str) {
+        return (Integer.toString(str.length()))+":"+str;
+    }
+
+    private String many(Object[] list){
+        String out = new String();
+	for(Object o : list){
+            if (o instanceof Long){
+                out+=i((long)o);
+            } else if (o instanceof String) {
+                out+=s((String)o);
+            } else if (o instanceof ArrayList){
+                out+=l((ArrayList)o);
+            } else if (o instanceof TreeMap){
+                out+=d((TreeMap)o);
+            } else {
+	    throw new IllegalArgumentException();
+            }
+        }
+        return out;
+    }
+
+    public String l(ArrayList a){
+        String out = new String("l");
+	out+=many(a.toArray());
+	out+="e";
+	return out;
+    }
+
+    public String d(TreeMap t) {
+	ArrayList a = new ArrayList();
+	for(Object o : t.entrySet()){
+	    Map.Entry me = (Map.Entry)o;
+	    a.add(me.getKey());
+	    a.add(me.getValue());
+	}
+	String out = new String("d");
+	out+=many(a.toArray());
+	out+="e";
+        return out;
+    }
+}
+
 public class Message extends TreeMap {
     public Message(String data) {
         super((new BencodingParser(data)).d()); // parse data and add to self
+    }
+
+    public String bencode() {
+	return (new BencodingWriter()).d(this);
     }
 
     public static void main(String[] args) {
@@ -110,6 +163,7 @@ public class Message extends TreeMap {
         // System.out.println(bp.parseString("cats"));
         Message m = new Message("d2:itl4:cats6:iamsofllelelllli0eeeeei12e2:noi1ee4:dogs3:hiei0eee");
         System.out.println(m);
+	System.out.println(m.bencode());
         // String dict = "d3:onei1e3:twoi2e5:threei3e4:listli1ei2ei3eee";
         // TreeMap out2 = bp.parseDictionary("d4:meta"+dict+"e");
         // System.out.println(out2);
