@@ -25,8 +25,8 @@ public class Torrent{
 
     public String trackerRequest(){
         String url = new String(((String)metainfo.get("announce"))+"?");
-        String info = (String) metainfo.get("info");
-        String info_hash = sha1.digest(info);
+        Message info = (Message) (metainfo.get("info"));
+        String info_hash = sha1.digest(info.bencode());
         url+="info_hash="+info_hash;
         return url;
     }
@@ -37,6 +37,12 @@ public class Torrent{
 
     public static void main(String[] args){
         Torrent t = new Torrent("[kickass.so]the.interview.2014.1080p.5.1.dd.custom.nl.subs.unlimitedmovies.torrent");
-        System.out.println(t.getMetainfo());
+        SHA1 sha1 = new SHA1();
+        Message m = t.getMetainfo();
+        Message info_dict = (Message) m.get("info");
+        String info = info_dict.bencode();
+        System.out.println(info);
+        String info_hash = sha1.digest(info);
+        System.out.println(info_hash);
     }
 }
