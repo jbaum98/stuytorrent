@@ -11,7 +11,7 @@ import java.net.Socket;
 public class Sender extends LoopThread {
     private Peer peer;
     private PrintWriter out;
-    public LinkedBlockingQueue<String> messages = new LinkedBlockingQueue<String>(); // works as a buffer, you add to front and take from back
+    private LinkedBlockingQueue<String> messages = new LinkedBlockingQueue<String>(); // works as a buffer, you add to front and take from back
 
     public Sender(Peer peer) throws IOException {
         this.peer = peer;

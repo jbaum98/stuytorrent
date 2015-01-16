@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.Closeable;
 
 class Death extends Thread {
-    private static final int DEFAULT_TIMEOUT = 0;
+    private static final int DEFAULT_TIMEOUT = 2;
     private Peer peer;
     private int timeout;
 
@@ -45,7 +45,7 @@ class Death extends Thread {
 }
 
 public class Peer implements Closeable, AutoCloseable {
-    public  Torrent  torrent;
+    // public  Torrent  torrent;
     public  Socket   socket;
     public  Receiver receiver;
     public  Sender   sender;
