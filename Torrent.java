@@ -4,13 +4,11 @@ import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Formatter;
 
 public class Torrent{
     private Message metainfo;
     private String bencodedInfo;
+    private static final SHA1 sha1 = new SHA1();
 
     public Torrent(String filename) {
         Path p = Paths.get(filename);
@@ -23,25 +21,14 @@ public class Torrent{
         String s = new String(b, StandardCharsets.US_ASCII);
         metainfo = new Message(s);
     }
-    
-    private static String byteArray2Hex(byte[] hash) {                                                               
-	Formatter formatter = new Formatter();                                                                       
-	for (byte b : hash) {                                                                                        
-	    formatter.format("%02x", b);                                                                             
-	}                                                                                                            
-	return formatter.toString();                                                                                 
-    }
-    
+
+
     public String trackerRequest(){
-	String url = new String(((String)metainfo.get("announce"))+"?");
-	MessageDigest cript = MessageDigest.getInstance("SHA-1");
-	cript.reset();
-	cript.update((((Message)(metainfo.get("info"))).bencode()).getBytes());
-	byte[] output = cript.digest();
-	String info_hash = new String(Hex.encodeHex(cript.digest()),CharSet.forName("UTF-8"));
-	url+="info_hash="+info_hash;
-	//url+="info_hash="+URLEncoder.encode(, "UTF-8");
-	return url;
+        String url = new String(((String)metainfo.get("announce"))+"?");
+        String info = (String) metainfo.get("info");
+        String info_hash = sha1.digest(info);
+        url+="info_hash="+info_hash;
+        return url;
     }
 
     public Message getMetainfo(){
