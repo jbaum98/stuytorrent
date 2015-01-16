@@ -13,15 +13,14 @@ abstract public class LoopThread extends Thread {
             while (!isInterrupted()) {
                 task();
             }
-            System.out.println("runing cleanup");
             synchronized (this) {
                 cleanup();
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace(System.out);
         }
+        System.out.println("closed");
         interrupt();
-        return;
     }
 
     abstract protected void cleanup() throws Exception; // cleanup is run after interrupt

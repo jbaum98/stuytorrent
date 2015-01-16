@@ -18,8 +18,10 @@ public class Sender extends LoopThread {
         out = new PrintWriter(peer.socket.getOutputStream(), true); // create somewhere to write to
     }
 
-    protected void task() throws IOException, InterruptedException { // see LoopThread.java
-        out.println(messages.take());
+    protected void task() { // see LoopThread.java
+        try {
+            out.println(messages.take());
+        } catch (InterruptedException e) {}
         /*
          * print to the Socket writer the last guy in the outgoing buffer
          * waits for something to get put in the outgoing buffer if it's empty
