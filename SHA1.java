@@ -17,7 +17,7 @@ public class SHA1 {
     }
 
     public String digest(String s) {
-        return byteArray2Hex(md.digest(s.getBytes()));
+        return digest(s.getBytes());
     }
 
     public String digest(byte[] bytes) {
