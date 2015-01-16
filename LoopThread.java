@@ -22,4 +22,23 @@ abstract public class LoopThread extends Thread {
     }
 
     abstract protected void cleanup() throws Exception; // cleanup is run after interrupt
+
+    public static void main(String[] args) {
+        TestThread t = new TestThread();
+        t.start();
+        try { Thread.sleep(100); } catch (InterruptedException e) {}
+        t.interrupt();
+        System.out.println("we out");
+    }
+}
+
+class TestThread extends LoopThread {
+    protected void task() {
+        System.out.println("running");
+    }
+
+    protected void cleanup() {
+        System.out.println("cleanup");
+    }
+
 }
