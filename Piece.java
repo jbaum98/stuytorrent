@@ -1,12 +1,10 @@
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Formatter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class Piece {
     private byte[] data;
     private String hash;
+    public static SHA1 sha1 = new SHA1();
 
     public Piece(String hash) {
         this.hash = hash;
@@ -35,22 +33,13 @@ public class Piece {
         return Arrays.copyOfRange(data, offset, data.length);
     }
 
-    public boolean isComplete() throws NoSuchAlgorithmException {
+    public boolean isComplete() {
         String calculated_hash = calculateHash();
         return calculated_hash.equals(this.hash);
     }
 
-    private String calculateHash() throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
-        return byteArray2Hex(md.digest(data));
-    }
-
-    private static String byteArray2Hex(byte[] hash) {
-        Formatter formatter = new Formatter();
-        for (byte b : hash) {
-            formatter.format("%02x", b);
-        }
-        return formatter.toString();
+    public String calculateHash() {
+        return sha1.digest(data);
     }
 
     public static void main(String[] args) throws Exception {
