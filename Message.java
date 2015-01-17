@@ -7,6 +7,7 @@
 
 import java.io.*;
 import java.util.*;
+import java.nio.charset.StandardCharsets;
 
 /*
  * parses Bencoded data
@@ -147,11 +148,13 @@ class BencodingWriter{
 }
 
 public class Message extends TreeMap {
+    public byte[] bytes;
     public Message() {
     }
 
-    public Message(String data) {
-        super((new BencodingParser(data)).d()); // parse data and add to self
+    public Message(byte[] bytes) {
+        super((new BencodingParser(new String(bytes, StandardCharsets.US_ASCII)).d()));
+	this.bytes = bytes;
     }
 
     public String bencode() {
