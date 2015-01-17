@@ -148,13 +148,11 @@ class BencodingWriter{
 }
 
 public class Message extends TreeMap {
-    public byte[] bytes;
     public Message() {
     }
 
-    public Message(byte[] bytes) {
-        super((new BencodingParser(new String(bytes, StandardCharsets.US_ASCII)).d()));
-	this.bytes = bytes;
+    public Message(String data) {
+        super((new BencodingParser(data).d()));
     }
 
     public String bencode() {

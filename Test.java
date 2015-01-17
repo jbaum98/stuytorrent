@@ -9,20 +9,19 @@ import java.util.Arrays;
 public class Test{
     public static void main(String[] args){
         Path k = Paths.get("ubuntu_info");
-        /*Path p = Paths.get("ubuntu.torrent");
-          byte[] b = new byte[0];*/
-
+        Path p = Paths.get("ubuntu_torrentarino");
+	byte[] b = new byte[0];
         byte[] w = new byte[0];
         try {
-            //b = Files.readAllBytes(p);
+            b = Files.readAllBytes(p);
             w = Files.readAllBytes(k);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //String s = new String(b, StandardCharsets.ISO_8859_1);
-        //	Message m = new Message(s);
-        //Message info = (Message) m.get("info");
-        //String info_s = info.bencode();
+        String s = new String(b, StandardCharsets.ISO_8859_1);
+        Message m = new Message(s);
+        Message info = (Message) m.get("info");
+        String info_s = info.bencode();
         //System.out.println(s);*/
         //System.out.println(info_bytes[157]);
 
@@ -38,13 +37,13 @@ public class Test{
         //System.out.println(b);
         String good = new String(w, StandardCharsets.ISO_8859_1);
         byte[] good_bytes = good.getBytes(StandardCharsets.ISO_8859_1);
-        /*if (info_s == good) {
+	if (info_s.equals(good)) {
           System.out.println("good");
-          } else {
+	} else {
           System.out.println("bad");
-          System.out.println("good is " + good);
-          System.out.println("bad is " + info_s);
-          }*/
-        System.out.println(sha1.digest(good_bytes));
+          //System.out.println("good is " + good);
+          //System.out.println("bad is " + info_s);
+	}
+	System.out.println(sha1.digest(info_s));
     }
 }

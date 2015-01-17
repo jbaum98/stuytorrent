@@ -7,9 +7,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Client extends LoopThread {
-    protected int listeningPort;
+    public int listeningPort;
     protected ServerSocket listeningSocket;
-    private ArrayList<Peer> peers = new ArrayList<Peer>();
+    public Torrent torrent;
 
     public Client(int listeningPort){
         this.listeningPort = listeningPort;
@@ -41,13 +41,13 @@ public class Client extends LoopThread {
      * and reduces the likelihood that it is busy when something tries to connect
      */
     private void addPeer(Socket peerSocket) throws IOException {
-        (new PeerRunner(peerSocket, peers)).start(); // see PeerRunner at bottom of this file
+        //(new PeerRunner(peerSocket, peers)).start(); // see PeerRunner at bottom of this file
     }
 
     public void cleanup(){ // see LoopThread
         try {
             listeningSocket.close();
-            closeAllPeers();
+            //closeAllPeers();
         } catch (IOException e) {
             throw new RuntimeException("Error closing client", e);
         }
@@ -66,7 +66,7 @@ public class Client extends LoopThread {
         addPeer(peerSocket);
     }
 
-    public synchronized void sendToAllPeers(String message) {
+    /*public synchronized void sendToAllPeers(String message) {
         for (Peer peer : peers) {
             peer.send(message);
         }
@@ -76,28 +76,39 @@ public class Client extends LoopThread {
         for (Peer peer : peers) {
             peer.close();
         }
-    }
+	}
 
     public Peer[] getPeers() {
         return peers.toArray(new Peer[0]);
+	}*/
+
+    public void addTorrent(String filename) {
+	torrent = new Torrent(filename, this);
+    }
+
+    public static void main(String[] args) {
+	Client client = new Client(6666);
+	client.addTorrent("ubuntu_torrentarino");
+	System.out.println(client.torrent.start());
     }
 }
 
 /*
  * this handles new peers so the Client can get back to listening
  */
-class PeerRunner extends Thread {
+/*class PeerRunner extends Thread {
     Peer peer = null;
     ArrayList<Peer> peers;
 
     public PeerRunner(Socket socket, ArrayList<Peer> peers) throws IOException {
         this.peer = new Peer(socket);
-        this.peers = peers; // this is a reference to the Client's peers list
+        //this.peers = peers; // this is a reference to the Client's peers list
     }
     public void run() {
         synchronized (peers) { // lock the client's peer list
             if (peer != null) {peers.add(peer);}
-        }
+	    }
+	return;
     }
-}
+    }*/
 

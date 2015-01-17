@@ -1,9 +1,10 @@
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Formatter;
+import java.nio.charset.StandardCharsets;
 
 public class SHA1 {
-    private static MessageDigest md = null;
+    private MessageDigest md = null;
 
     public SHA1() {
         if (md == null) {
@@ -17,11 +18,11 @@ public class SHA1 {
     }
 
     public String digest(String s) {
-        return digest(s.getBytes());
+        return digest(s.getBytes(StandardCharsets.ISO_8859_1));
     }
 
     public String digest(String s, boolean url) {
-        return digest(s.getBytes(), url);
+        return digest(s.getBytes(StandardCharsets.ISO_8859_1), url);
     }
 
     public String digest(byte[] bytes) {
@@ -30,6 +31,7 @@ public class SHA1 {
 
     public String digest(byte[] bytes, boolean url) {
         byte[] digest = md.digest(bytes);
+	md.reset();
         return byteArray2Hex(digest, url);
     }
 
