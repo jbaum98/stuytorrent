@@ -12,35 +12,19 @@ public class SHA1 {
                 md = MessageDigest.getInstance("SHA-1");
             } catch (NoSuchAlgorithmException e) {
                 System.out.println("You're missing SHA1");
-                System.out.println(e.getMessage());
+                e.printStackTrace(System.out);
             }
         }
     }
 
-    public String digest(String s) {
+    public byte[] digest(String s) {
         return digest(s.getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public String digest(String s, boolean url) {
-        return digest(s.getBytes(StandardCharsets.ISO_8859_1), url);
-    }
-
-    public String digest(byte[] bytes) {
-        return digest(bytes, false);
-    }
-
-    public String digest(byte[] bytes, boolean url) {
+    public byte[] digest(byte[] bytes) {
         byte[] digest = md.digest(bytes);
-	md.reset();
-        return byteArray2Hex(digest, url);
+        md.reset();
+        return digest;
     }
 
-    private static String byteArray2Hex(byte[] hash, boolean url) {
-        String base = url ? "%%" : new String();
-        Formatter formatter = new Formatter();
-        for (byte b : hash) {
-            formatter.format(base+"%02x", b);
-        }
-        return formatter.toString();
-    }
 }

@@ -1,5 +1,8 @@
 import java.util.Arrays;
 
+/**
+ * Stores information on which pieces a peer possesses
+ */
 public class Bitfield {
     private boolean[] bits;
 
@@ -7,24 +10,27 @@ public class Bitfield {
         bits = new boolean[pieces];
     }
 
+    /**
+     * @return a copy of {@link #bits}
+     */
     public boolean[] getBits() {
         return Arrays.copyOf(bits, bits.length);
     }
 
-    public boolean isPresent(int offset) {
-        return bits[offset];
+    public boolean isPresent(int piece_index) {
+        return bits[piece_index];
     }
 
-    public void setPresent(int offset) {
-        bits[offset] = true;
+    public void setPresent(int piece_index) {
+        bits[piece_index] = true;
     }
 
-    public void setAbsent(int offset) {
-        bits[offset] = false;
+    public void setAbsent(int piece_index_index) {
+        bits[piece_index] = false;
     }
 
-    public void setPresence(int offset, boolean status) {
-        bits[offset] = status;
+    public void setPresence(int piece_index, boolean status) {
+        bits[piece_index] = status;
     }
 
 }
