@@ -2,14 +2,14 @@
  * Listens for connections
  */
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Set;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Client extends LoopThread {
     public int listeningPort;
     protected ServerSocket listeningSocket;
-    public Torrent torrent;
+    public Set<Torrent> torrents;
 
     public Client(int listeningPort){
         this.listeningPort = listeningPort;
@@ -83,22 +83,21 @@ public class Client extends LoopThread {
 	}*/
 
     public void addTorrent(String filename) {
-	torrent = new Torrent(filename, this);
+	Torrent torrent = new Torrent(filename, this);
+	torrents.add(torrent);
     }
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
 	Client client = new Client(6666);
 	client.addTorrent("ubuntu_torrentarino");
-	System.out.println(client.torrent.start());
-    }
+	System.out.println(""+client.torrent.start());
+	}*/
 }
 
 /*
  * this handles new peers so the Client can get back to listening
  */
-/*class PeerRunner extends Thread {
-    Peer peer = null;
-    ArrayList<Peer> peers;
+class ClientConnectionHandler extends Thread {
 
     public PeerRunner(Socket socket, ArrayList<Peer> peers) throws IOException {
         this.peer = new Peer(socket);
@@ -110,5 +109,5 @@ public class Client extends LoopThread {
 	    }
 	return;
     }
-    }*/
+}
 
