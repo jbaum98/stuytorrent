@@ -25,7 +25,7 @@ public class Bitfield {
         bits[piece_index] = true;
     }
 
-    public void setAbsent(int piece_index_index) {
+    public void setAbsent(int piece_index) {
         bits[piece_index] = false;
     }
 

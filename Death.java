@@ -1,9 +1,14 @@
 import java.io.IOException;
 
-class Death extends Thread {
+/**
+ * closses a {@link Peer} after waiting some time
+ * to ensure that {@link Peer}s who do not send keep-alive messages are discarded
+ */
+
+public class Death extends Thread {
     private static final int DEFAULT_TIMEOUT = 2;
-    private Peer peer;
-    private int timeout;
+    private final Peer peer;
+    private final int timeout;
 
     public Death(Peer peer, double timeout_mins) {
         this.peer = peer;

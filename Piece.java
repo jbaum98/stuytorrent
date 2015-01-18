@@ -1,16 +1,20 @@
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+/**
+ * represents a piece of a {@link Torrent}
+ */
+
 public class Piece {
     private byte[] data;
-    private String hash;
+    private byte[] hash;
     public static SHA1 sha1 = new SHA1();
 
-    public Piece(String hash) {
+    public Piece(byte[] hash) {
         this.hash = hash;
     }
 
-    public Piece(String hash, int length) {
+    public Piece(byte[] hash, int length) {
         this(hash);
         this.data = new byte[length];
     }
@@ -34,24 +38,24 @@ public class Piece {
     }
 
     public boolean isComplete() {
-        String calculated_hash = calculateHash();
-        return calculated_hash.equals(this.hash);
+        byte[] calculated_hash = calculateHash();
+        return Arrays.equals(calculated_hash,this.hash);
     }
 
-    public String calculateHash() {
+    public byte[] calculateHash() {
         return sha1.digest(data);
     }
 
     public static void main(String[] args) throws Exception {
-        Piece p = new Piece("a9993e364706816aba3e25717850c26c9cd0d89d", 3); // hash for 'abc'
-        byte[] b = "abc".getBytes(StandardCharsets.US_ASCII);
+        Piece p = new Piece(SHA1.hexToBytes("a9993e364706816aba3e25717850c26c9cd0d89d"), 3); // hash for 'abc'
+        byte[] b = "abc".getBytes(StandardCharsets.ISO_8859_1);
         p.setData(b);
         if (p.isComplete()) {
             System.out.println("fuck yeah");
         } else {
             System.out.println("didn't work:");
-            System.out.println("expected hash to be: " + p.hash);
-            System.out.println("calculated: " + p.calculateHash());
+            System.out.println("expected hash to be: " + Arrays.toString(p.hash));
+            System.out.println("calculated: " + Arrays.toString(p.calculateHash()));
         }
     }
 }

@@ -1,13 +1,16 @@
-/*
- * abstracts the common task of having a thread that repeats the same task until it is interrupted
- */
-
 import java.io.IOException;
 
+/**
+ * abstracts the common task of having a thread that repeats the same task until it is interrupted
+ */
 abstract public class LoopThread extends Thread {
 
-    protected abstract void task() throws Exception; // the task method will be repeated until the thread is interrupted
+    /**
+     * will be repeated until the thread is interrupted
+     */
+    protected abstract void task() throws Exception;
 
+    /** @see Thread#run */
     public void run() {
         try {
             while (!isInterrupted()) {
@@ -22,5 +25,6 @@ abstract public class LoopThread extends Thread {
         interrupt();
     }
 
-    abstract protected void cleanup() throws Exception; // cleanup is run after interrupt
+    /** will be run after the {@link LoopThread} is Interrupted */
+    abstract protected void cleanup() throws Exception;
 }

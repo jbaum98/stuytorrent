@@ -18,6 +18,10 @@ import java.net.MalformedURLException;
 import java.net.HttpURLConnection;
 import java.net.Socket;
 
+/**
+ * represents a torrent we want to download
+ */
+
 public class Torrent {
     private static final Charset charset = StandardCharsets.ISO_8859_1;
     private final SHA1 sha1 = new SHA1();
@@ -39,7 +43,11 @@ public class Torrent {
 
     public final byte[] handshake;
 
-
+    /**
+     * reads and parses the metainfo file
+     * @param filename name of metainfo file; TODO must be in same directory
+     * @param client   reference to client
+     */
     public Torrent(String filename, Client client) throws IOException {
         this.client = client;
         this.peers= new HashSet<Peer>();
@@ -98,6 +106,10 @@ public class Torrent {
         return info_hash.hashCode();
     }
 
+    /**
+     * starts the Torrent by downloading peers from the Tracker
+     * and connecting to those Peers
+     */
     public void start() {
         Message response = updateTracker(trackerRequest("started"));
         System.out.println("got tracker response");
@@ -120,6 +132,10 @@ public class Torrent {
         }
     }
 
+    /**
+     * connects to the tracker
+     * @return Message containing parsed response
+     */
     private Message updateTracker(String url) {
         byte[] tracker_response;
         HttpURLConnection connection;
@@ -148,6 +164,7 @@ public class Torrent {
         return response;
     }
 
+    /** extracts peer information from peers string in tracker response */
     private PeerToBe[] parsePeers(byte[] peers) {
         PeerToBe[] out = new PeerToBe[peers.length/6];
         int[] unsigneds = new int[peers.length];
@@ -173,6 +190,7 @@ public class Torrent {
         return trackerRequest(null);
     }
 
+    /** @return the url with proper query string for the tracker request */
     public String trackerRequest(String event) {
         String url = ((String) metainfo.get("announce"));
         QueryMap queries = new QueryMap();
@@ -192,6 +210,7 @@ public class Torrent {
         return out;
     }
 
+    /** adds a query string to a url */
     private String createURL(String url, QueryMap queries_hash) {
         String query_string = new String();
         Set<Map.Entry<String,String>> queries = queries_hash.entrySet();
@@ -233,6 +252,7 @@ public class Torrent {
     }
 }
 
+/** stores information needed to connect to a new Peer */
 class PeerToBe {
     public String hostname;
     public int port;

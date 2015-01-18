@@ -6,6 +6,11 @@ import java.nio.charset.Charset;
 import java.net.URLEncoder;
 import java.io.UnsupportedEncodingException;
 
+/**
+ * extends {@link java.util.HashMap} to convert Strings, byte[]s, ints and longs
+ * to proper URL encoding on put
+ */
+
 public class QueryMap extends HashMap<String,String> {
     private static final Charset charset = StandardCharsets.ISO_8859_1;
     private static final long serialVersionUID = 1567891877869114093L;
