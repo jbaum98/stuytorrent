@@ -2,17 +2,18 @@
  * Listens for connections
  */
 import java.io.IOException;
-import java.util.Set;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class Client extends LoopThread {
     public int listeningPort;
     protected ServerSocket listeningSocket;
-    public Set<Torrent> torrents;
+    public TorrentList torrents;
 
     public Client(int listeningPort){
         this.listeningPort = listeningPort;
+	this.torrents = new TorrentList();
         startListen();
     }
 
@@ -66,22 +67,6 @@ public class Client extends LoopThread {
         addPeer(peerSocket);
     }
 
-    /*public synchronized void sendToAllPeers(String message) {
-        for (Peer peer : peers) {
-            peer.send(message);
-        }
-    }
-
-    public synchronized void closeAllPeers() throws IOException {
-        for (Peer peer : peers) {
-            peer.close();
-        }
-	}
-
-    public Peer[] getPeers() {
-        return peers.toArray(new Peer[0]);
-	}*/
-
     public void addTorrent(String filename) {
 	Torrent torrent = new Torrent(filename, this);
 	torrents.add(torrent);
@@ -90,7 +75,8 @@ public class Client extends LoopThread {
     /*public static void main(String[] args) {
 	Client client = new Client(6666);
 	client.addTorrent("ubuntu_torrentarino");
-	System.out.println(""+client.torrent.start());
+	ClientConnectionHandler c = new ClientConnectionHandler(
+	System.out.println(Arrays.toString();
 	}*/
 }
 
@@ -98,16 +84,70 @@ public class Client extends LoopThread {
  * this handles new peers so the Client can get back to listening
  */
 class ClientConnectionHandler extends Thread {
+    private Socket socket;
+    private Peer peer;
+    private TorrentList torrents;
+    private Torrent torrent;
 
-    public PeerRunner(Socket socket, ArrayList<Peer> peers) throws IOException {
-        this.peer = new Peer(socket);
-        //this.peers = peers; // this is a reference to the Client's peers list
+    public ClientConnectionHandler(Socket socket, TorrentList torrents) throws IOException {
+        this.socket = socket;
+        this.torrents = torrents; // this is a reference to the Client's torrent list
     }
     public void run() {
-        synchronized (peers) { // lock the client's peer list
-            if (peer != null) {peers.add(peer);}
-	    }
-	return;
+	// RECEIVE HANDSHAKE\
+	byte[] pstrlen, pstr, reserved, info_hash, peer_id;
+	try {
+	    pstrlen = new byte[1];
+	    peer.in.read(pstrlen);
+	    
+	    pstr = new byte[pstrlen[0]];
+	    peer.in.read(pstr);
+	    
+	    reserved = new byte[8];
+	    peer.in.read(reserved);
+	    
+	    info_hash = new byte[20];
+	    peer.in.read(info_hash);
+	    
+	    peer_id = new byte[20];
+	    peer.in.read(peer_id);
+	} catch (IOException e) {
+	    info_hash = null;
+	}
+	// GET TORRENT
+	torrent  = torrents.getTorrent(info_hash);
+	if (torrent == null) {return;}
+
+	// RECIPROCATE HANDSHAKE
+	try {
+	    peer = new Peer(socket, torrent);
+	    peer.send(handshake());
+	} catch (IOException e) {}
+	
+	// ADD PEER
+	synchronized (torrent.peers) {
+	    torrent.peers.add(peer);
+	} // lock the client's peer list
+    }
+    
+    public byte[] handshake() {
+	String pstr = "BitTorrent protocol";
+	byte[] pstr_bytes = pstr.getBytes(StandardCharsets.ISO_8859_1);
+	byte pstrlen = (byte) pstr_bytes.length;
+	byte[] out = new byte[49 + pstrlen];
+
+	out[0] = pstrlen;
+
+
+	for (int i = 0; i < pstrlen; i++) {
+	    out[i+1] = pstr_bytes[i];
+	}
+
+	for(int i = 0; i<20; i++) {
+	    out[pstrlen+9]=torrent.info_hash_bytes[i];
+	    out[pstrlen+29]=torrent.peer_id_bytes[i];
+	}
+	return out;
     }
 }
 

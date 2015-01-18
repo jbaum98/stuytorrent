@@ -9,63 +9,23 @@
 import java.net.Socket;
 import java.io.IOException;
 import java.io.Closeable;
-
-class Death extends Thread {
-    private static final int DEFAULT_TIMEOUT = 2;
-    private Peer peer;
-    private int timeout;
-
-    public Death(Peer peer, double timeout_mins) {
-        this.peer = peer;
-        this.timeout = (int)(timeout_mins * 60 * 1000);
-    }
-
-    public Death(Peer peer) {
-        this(peer, DEFAULT_TIMEOUT);
-    }
-
-    public void run() {
-        sleep();
-        killPeer();
-    }
-
-    private void killPeer() {
-        try {
-            peer.close();
-        } catch (IOException e) {
-            e.printStackTrace(System.out);
-        }
-    }
-
-    private void sleep() {
-        try {
-            Thread.sleep(timeout);
-        } catch (InterruptedException e) {}
-    }
-}
+import java.io.BufferedInputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 public class Peer implements Closeable, AutoCloseable {
-    // public  Torrent  torrent;
-    public  Socket   socket;
-    public  Receiver receiver;
-    public  Sender   sender;
+    public Socket   socket;
+    public BufferedInputStream in;
+    public OutputStream out;
+    private Torrent torrent;
     public Death  death;
 
-    public Peer(Socket socket) throws IOException {
+    public Peer(Socket socket, Torrent torrent) throws IOException {
         this.socket = socket;
-        startReceiver();
-        startSender();
+	this.torrent = torrent;
+        in = new BufferedInputStream(socket.getInputStream());
+	out = socket.getOutputStream();
         startDeath();
-    }
-
-    private void startReceiver() throws IOException {
-        receiver = new Receiver(this);
-        receiver.start();
-    }
-
-    private void startSender() throws IOException {
-        sender = new Sender(this);
-        sender.start();
     }
 
     private void startDeath() {
@@ -73,19 +33,20 @@ public class Peer implements Closeable, AutoCloseable {
         death.start();
     }
 
-    public void send(String message) {
-        sender.send(message);
+    public void send(String message) throws IOException {
+        send(message.getBytes(StandardCharsets.ISO_8859_1));
+    }
+
+    public void send(byte[] message) throws IOException {
+	out.write(message);
     }
 
     public String toString() {
         return socket.toString();
     }
     public void close() throws IOException {
-        socket.shutdownInput();
-        closeLoopThread(receiver);
-        closeLoopThread(sender);
         socket.close();
-        // Torrent.removePeer(self);
+        torrent.peers.remove(this);
     }
 
     public void closeLoopThread(LoopThread l) throws IOException {
@@ -97,8 +58,4 @@ public class Peer implements Closeable, AutoCloseable {
         } catch (InterruptedException e){} // we want it to exit so InterruptedExceptions are good
     }
 
-    public static void main (String[] args) throws IOException {
-        System.out.println("start: " + System.currentTimeMillis());
-        Peer p = new Peer(new Socket("localhost", 3000));
-    }
 }

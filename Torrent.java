@@ -11,18 +11,22 @@ import java.io.InputStreamReader;
 import java.io.ByteArrayOutputStream;
 import java.io.BufferedInputStream;
 import java.util.Arrays;
+import java.util.HashSet;
 
 public class Torrent {
     private Message metainfo;
     private Message info;
     private long size;
     private String bencodedInfo;
-    public String peer_id = sha1.digest(Double.toString(Math.random()).getBytes(),true);
+    public String peer_id = sha1.digest(Double.toString(Math.random()), true);
+    public byte[] peer_id_bytes = peer_id.getBytes(StandardCharsets.ISO_8859_1);
     private static final SHA1 sha1 = new SHA1();
     private Client client;
     private int uploaded = 0;
     private int downloaded = 0;
     public String info_hash;
+    public byte[] info_hash_bytes;
+    public HashSet<Peer> peers;
 
     public Torrent(String filename, Client client) {
 	this.client = client;
@@ -40,6 +44,8 @@ public class Torrent {
 	long piece_length = (long) info.get("piece length");
 	System.out.println(pieces.length);
 	size = piece_length * pieces.length  / 20;
+	info_hash = sha1.digest(info.bencode(),true);
+	info_hash_bytes = info_hash.getBytes(StandardCharsets.ISO_8859_1);
     }
 
     public boolean equals(Torrent other){
@@ -94,11 +100,8 @@ public class Torrent {
     }
     
 
-
     public String trackerRequest(){
         String url = new String(((String)metainfo.get("announce"))+"?");
-        
-        info_hash = sha1.digest(info.bencode(),true);
 	int port = client.listeningPort;
 	int compact = 1;
         url+="info_hash="+info_hash+"&"+"peer_id="+peer_id+"&"+"port="+port+"&"+"uploaded="+uploaded+"&"+"downloaded="+downloaded+"&"+"left="+left()+"&"+"compact="+compact;
