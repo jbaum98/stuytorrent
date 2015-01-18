@@ -19,9 +19,15 @@ public class Peer implements Closeable, AutoCloseable {
     public OutputStream out;
     private Torrent torrent;
     public Death  death;
+    public String id;
 
     public Peer(Socket socket, Torrent torrent) throws IOException {
+	this(socket, null, torrent);
+    }
+
+    public Peer(Socket socket, String id, Torrent torrent) throws IOException {
         this.socket = socket;
+	this.id = id;
 	this.torrent = torrent;
         in = new BufferedInputStream(socket.getInputStream());
 	out = socket.getOutputStream();

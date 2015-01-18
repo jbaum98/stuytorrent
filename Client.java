@@ -72,12 +72,13 @@ public class Client extends LoopThread {
 	torrents.add(torrent);
     }
 
-    /*public static void main(String[] args) {
+    public static void main(String[] args) {
 	Client client = new Client(6666);
 	client.addTorrent("ubuntu_torrentarino");
-	ClientConnectionHandler c = new ClientConnectionHandler(
-	System.out.println(Arrays.toString();
-	}*/
+	System.out.println("torrent added");
+	Torrent t = client.torrents.iterator().next();
+	t.start();
+    }
 }
 
 /*
@@ -95,7 +96,7 @@ class ClientConnectionHandler extends Thread {
     }
     public void run() {
 	// RECEIVE HANDSHAKE\
-	byte[] pstrlen, pstr, reserved, info_hash, peer_id;
+	byte[] pstrlen, pstr, reserved, info_hash, peer_id_bytes;
 	try {
 	    pstrlen = new byte[1];
 	    peer.in.read(pstrlen);
@@ -109,19 +110,22 @@ class ClientConnectionHandler extends Thread {
 	    info_hash = new byte[20];
 	    peer.in.read(info_hash);
 	    
-	    peer_id = new byte[20];
-	    peer.in.read(peer_id);
+	    peer_id_bytes = new byte[20];
+	    peer.in.read(peer_id_bytes);
 	} catch (IOException e) {
 	    info_hash = null;
+	    peer_id_bytes = null;
 	}
+
 	// GET TORRENT
 	torrent  = torrents.getTorrent(info_hash);
 	if (torrent == null) {return;}
 
 	// RECIPROCATE HANDSHAKE
+	String peer_id = new String(peer_id_bytes, StandardCharsets.ISO_8859_1);
 	try {
-	    peer = new Peer(socket, torrent);
-	    peer.send(handshake());
+	    peer = new Peer(socket, peer_id, torrent);
+	    peer.send(torrent.handshake);
 	} catch (IOException e) {}
 	
 	// ADD PEER
@@ -130,24 +134,5 @@ class ClientConnectionHandler extends Thread {
 	} // lock the client's peer list
     }
     
-    public byte[] handshake() {
-	String pstr = "BitTorrent protocol";
-	byte[] pstr_bytes = pstr.getBytes(StandardCharsets.ISO_8859_1);
-	byte pstrlen = (byte) pstr_bytes.length;
-	byte[] out = new byte[49 + pstrlen];
-
-	out[0] = pstrlen;
-
-
-	for (int i = 0; i < pstrlen; i++) {
-	    out[i+1] = pstr_bytes[i];
-	}
-
-	for(int i = 0; i<20; i++) {
-	    out[pstrlen+9]=torrent.info_hash_bytes[i];
-	    out[pstrlen+29]=torrent.peer_id_bytes[i];
-	}
-	return out;
-    }
 }
 
