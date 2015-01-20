@@ -75,10 +75,10 @@ public class BencodingParser {
     /**
      * parse a dictionary
      */
-    public Message d() {
+    public BencodingMap d() {
         counter++; //get past d
         ArrayList parsed = many(); // get a list of elements
-        Message out = new Message();
+        BencodingMap out = new BencodingMap();
         for (int i = 0; i < parsed.size(); i+=2) {
             out.put(parsed.get(i), parsed.get(i+1)); // every other element is a key or a value
         }

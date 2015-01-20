@@ -31,8 +31,8 @@ public class Torrent {
 
     public final String peer_id;
 
-    public final Message metainfo;
-    public final Message info;
+    public final BencodingMap metainfo;
+    public final BencodingMap info;
     public final byte[]  piece_hashes;
     public final long    piece_size;
     public final Piece[] pieces;
@@ -62,8 +62,8 @@ public class Torrent {
         byte[] bytes = Files.readAllBytes(path);
         String metainfo_string = new String(bytes, charset);
 
-        metainfo = new Message(metainfo_string);
-        info = (Message) (metainfo.get("info"));
+        metainfo = new BencodingMap(metainfo_string);
+        info = (BencodingMap) (metainfo.get("info"));
         //////////////////////
 
         // CALCULATE SIZE
@@ -115,7 +115,7 @@ public class Torrent {
      * and connecting to those Peers
      */
     public void start() {
-        Message response = updateTracker(trackerRequest("started"));
+        BencodingMap response = updateTracker(trackerRequest("started"));
         System.out.println("got tracker response");
 
         if (response.containsKey("failure reason")) {
@@ -138,9 +138,9 @@ public class Torrent {
 
     /**
      * connects to the tracker
-     * @return Message containing parsed response
+     * @return BencodingMap containing parsed response
      */
-    private Message updateTracker(String url) {
+    private BencodingMap updateTracker(String url) {
         byte[] tracker_response;
         HttpURLConnection connection;
         try {
@@ -164,7 +164,7 @@ public class Torrent {
             throw new RuntimeException("Error on updating tracker", e);
         }
         String response_str = new String(tracker_response, charset);
-        Message response = new Message(response_str);
+        BencodingMap response = new BencodingMap(response_str);
         return response;
     }
 

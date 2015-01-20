@@ -6,13 +6,13 @@ import java.nio.charset.StandardCharsets;
  * Bencoding operations in a TreeMap
  */
 
-public class Message extends TreeMap {
+public class BencodingMap extends TreeMap {
     private static final long serialVersionUID = 6649525734686742785L;
 
-    public Message() {
+    public BencodingMap() {
     }
 
-    public Message(String data) {
+    public BencodingMap(String data) {
         super((new BencodingParser(data).d()));
     }
 
@@ -26,7 +26,7 @@ public class Message extends TreeMap {
         // System.out.println(bp.parseString("4:cats"));
         // System.out.println(bp.parseString("5:cats"));
         // System.out.println(bp.parseString("cats"));
-        Message m = new Message("d2:itl4:cats6:iamsofllelelllli0eeeeei12e2:noi1ee4:dogs3:hiei0eee");
+        BencodingMap m = new BencodingMap("d2:itl4:cats6:iamsofllelelllli0eeeeei12e2:noi1ee4:dogs3:hiei0eee");
         System.out.println(m);
         System.out.println(m.bencode());
         // String dict = "d3:onei1e3:twoi2e5:threei3e4:listli1ei2ei3eee";

@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * produces Bencoded representation from {@link Message}
+ * produces Bencoded representation from {@link BencodingMap}
  * @see <a href="https://wiki.theory.org/BitTorrentSpecification#Bencoding">Bit Torrent Specification</a>
  */
 public class BencodingWriter{
@@ -27,8 +27,8 @@ public class BencodingWriter{
                 out+=s((String)o);
             } else if (o instanceof ArrayList){
                 out+=l((ArrayList)o);
-            } else if (o instanceof Message){
-                out+=d((Message)o);
+            } else if (o instanceof BencodingMap){
+                out+=d((BencodingMap)o);
             } else {
                 throw new IllegalArgumentException();
             }
@@ -45,7 +45,7 @@ public class BencodingWriter{
     }
 
     /** produces bencoded dictionary */
-    public String d(Message t) {
+    public String d(BencodingMap t) {
         ArrayList a = new ArrayList();
         for(Object o : t.entrySet()){
             Map.Entry me = (Map.Entry)o;
