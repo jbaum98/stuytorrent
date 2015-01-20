@@ -31,12 +31,15 @@ public class Torrent {
 
     public final String peer_id;
 
-    public Message metainfo;
-    public Message info;
+    public final Message metainfo;
+    public final Message info;
+    public final byte[]  piece_hashes;
+    public final long    piece_size;
+    public final Piece[] pieces;
+    public final long    size;
 
     public byte[] info_hash;
 
-    private long size;
 
     private int uploaded = 0;
     private int downloaded = 0;
@@ -64,10 +67,11 @@ public class Torrent {
         //////////////////////
 
         // CALCULATE SIZE
-        byte[] pieces = ((String)info.get("pieces")).getBytes(charset);
-        long piece_length = (long) info.get("piece length");
-
-        size = piece_length * pieces.length / 20;
+        piece_hashes = ((String)info.get("pieces")).getBytes(charset);
+        piece_size = (long) info.get("piece length");
+        int num_pieces = piece_hashes.length / 20;
+        pieces = new Piece[num_pieces];
+        size = piece_size * num_pieces;
 
         // SET INFO HASH
         info_hash = sha1.digest(info.bencode());
@@ -249,6 +253,14 @@ public class Torrent {
         synchronized (peers) {
             return peers.remove(peer);
         }
+    }
+
+    public byte[] getChunk(int index, int begin, int length) {
+        return pieces[index].getChunk(begin, length);
+    }
+
+    public void addChunk(int index, int begin, byte[] block) {
+        pieces[index].setData(block, begin);
     }
 }
 

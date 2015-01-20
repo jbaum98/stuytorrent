@@ -21,6 +21,17 @@ public class Peer implements Closeable, AutoCloseable {
     private final byte[] info_hash;
 
     private Death death;
+
+    /** if HE is chocking ME */
+    private boolean peer_choking    = true;
+    /** if HE is interested in  ME */
+    private boolean peer_interested = false;
+    /** if I am chocking HIM */
+    private boolean am_choking      = true;
+    /** if I am chocking HIM */
+    private boolean am_interested   = false;
+
+    public Bitfield bitfield;
     /**
      * called when we are initiating the connection
      * @param socket  the {@link java.net.Socket} to the Peer
@@ -32,6 +43,7 @@ public class Peer implements Closeable, AutoCloseable {
         out = socket.getOutputStream();
 
         this.torrent = torrent;
+        bitfield  = new Bitfield(torrent.piece_hashes.length);
 
         sendHandshake();
 
@@ -69,11 +81,13 @@ public class Peer implements Closeable, AutoCloseable {
             close();
             return;
         }
+        bitfield  = new Bitfield(torrent.piece_hashes.length);
 
         sendHandshake();
 
         torrent.addPeer(this);
         startDeath();
+        System.out.println(id);
     }
 
     private void startDeath() {
@@ -89,7 +103,7 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
     /**
-     * receives a handshake and sets {@link id} and {@link info_hash} 
+     * receives a handshake and sets {@link id} and {@link info_hash}
      * @return the info_hash from the handshake
      */
     public HandshakeInfo receiveHandshake() throws IOException {
@@ -125,15 +139,77 @@ public class Peer implements Closeable, AutoCloseable {
         send(message.getBytes());
     }
 
-    public String toString() {
-        return socket.toString();
+    // MESSAGE METHODS
+    // @see <a href="https://wiki.theory.org/BitTorrentSpecification#Messages">Bit Torrent Specification</a>
+
+    /** called when {@link Peer} recieves a keep-alive message */
+    public void keepalive() {
+        death.interrupt();
+        death = new Death(this);
     }
 
+    /** called when {@link Peer} recieves a choke message */
+    public void choke() {
+        peer_choking = true;
+    }
+
+    /** called when {@link Peer} recieves an unchoke message */
+    public void unchoke() {
+        peer_choking = false;
+    }
+
+    /** called when {@link Peer} recieves an interested message */
+    public void interested() {
+        peer_interested = true;
+    }
+
+    /** called when {@link Peer} recieves a not interested message */
+    public void not_interested() {
+        peer_interested = false;
+    }
+
+    /** called when {@link Peer} recieves a have message */
+    public void have(int piece_index) {
+        bitfield.setPresent(piece_index);
+    }
+
+    /** called when {@link Peer} recieves a request message */
+    public void request(int index, int begin, int length) {
+        send(torrent.getChunk(index, begin, length));
+    }
+
+    public void piece(int index, int begin, byte[] block) {
+        torrent.addChunk(index, begin, block);
+    }
+
+    // CHOKED/INTERESTED GETTERS
+
+    public boolean peer_choking() {
+        return peer_choking;
+    }
+
+    public boolean peer_interested() {
+        return peer_interested;
+    }
+
+    public boolean am_choking() {
+        return am_choking;
+    }
+
+    public boolean am_interested() {
+        return am_interested;
+    }
+
+    /** closes a {@link Peer} by closing the socket and removing itself from it's {@link Torrent}'s {@link Torrent#torrentlis} */
     public synchronized void close() throws IOException {
         socket.close();
         if (torrent != null) {
             torrent.removePeer(this);
         }
+    }
+
+    public String toString() {
+        return id;
     }
 
     @Override

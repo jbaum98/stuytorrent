@@ -20,7 +20,11 @@ public class Death extends Thread {
     }
 
     public void run() {
-        sleep();
+        try {
+            Thread.sleep(timeout);
+        } catch (InterruptedException e) {
+            return; // we don't want to kill the Peer if Death is interrupted
+        }
         killPeer();
     }
 
@@ -30,11 +34,5 @@ public class Death extends Thread {
         } catch (IOException e) {
             e.printStackTrace(System.out);
         }
-    }
-
-    private void sleep() {
-        try {
-            Thread.sleep(timeout);
-        } catch (InterruptedException e) {}
     }
 }
