@@ -40,10 +40,17 @@ class Have extends Message {
 }
 
 class BitfieldMessage extends Message {
-    public final byte[] bitfield;
+    public final boolean[] bitfield;
 
-    public BitfieldMessage(byte[] bitfield) {
-        this.bitfield = bitfield;
+    public BitfieldMessage(byte[] bytes) throws IllegalArgumentException {
+        bitfield = new boolean[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            if (bytes[i] == 0 || bytes[i] == 1) {
+                bitfield[i] = bytes[i] == 1;
+            } else {
+                throw new IllegalArgumentException("Input consists of non-binary data");
+            }
+        }
     }
 }
 

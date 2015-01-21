@@ -10,6 +10,10 @@ public class Bitfield {
         bits = new boolean[pieces];
     }
 
+    public Bitfield(BitfieldMessage message) {
+        bits = message.bitfield;
+    }
+
     /**
      * @return a copy of {@link #bits}
      */

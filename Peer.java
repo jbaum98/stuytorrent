@@ -13,6 +13,7 @@ public class Peer implements Closeable, AutoCloseable {
     private static final Charset charset = StandardCharsets.ISO_8859_1;
     public  final Socket socket;
     private final BufferedInputStream in;
+    private final Receiver            receiver;
     private final OutputStream        out;
 
     private final Torrent torrent;
@@ -41,9 +42,9 @@ public class Peer implements Closeable, AutoCloseable {
         this.socket = socket;
         in = new BufferedInputStream(socket.getInputStream());
         out = socket.getOutputStream();
+        receiver = new Receiver(this, in);
 
         this.torrent = torrent;
-        bitfield  = new Bitfield(torrent.piece_hashes.length);
 
         sendHandshake();
 
@@ -55,6 +56,13 @@ public class Peer implements Closeable, AutoCloseable {
         if (! info_hash.equals(torrent.info_hash)) {
             close();
             return;
+        }
+
+        Message first = receiver.messages.peek();
+        if ( first instanceof BitfieldMessage) {
+            bitfield = new Bitfield((BitfieldMessage) first);
+        } else {
+            bitfield  = new Bitfield(torrent.piece_hashes.length);
         }
 
         torrent.addPeer(this);
@@ -70,6 +78,7 @@ public class Peer implements Closeable, AutoCloseable {
         this.socket = socket;
         in = new BufferedInputStream(socket.getInputStream());
         out = socket.getOutputStream();
+        receiver = new Receiver(this, in);
 
         HandshakeInfo received = receiveHandshake();
         info_hash = received.info_hash;
@@ -81,9 +90,15 @@ public class Peer implements Closeable, AutoCloseable {
             close();
             return;
         }
-        bitfield  = new Bitfield(torrent.piece_hashes.length);
 
         sendHandshake();
+
+        Message first = receiver.messages.peek();
+        if ( first instanceof BitfieldMessage) {
+            bitfield = new Bitfield((BitfieldMessage) first);
+        } else {
+            bitfield  = new Bitfield(torrent.piece_hashes.length);
+        }
 
         torrent.addPeer(this);
         startDeath();
@@ -129,13 +144,18 @@ public class Peer implements Closeable, AutoCloseable {
         return new HandshakeInfo(info_hash, id);
     }
 
-    public void send(byte[] message) throws IOException {
-        synchronized (out) {
-            out.write(message);
+    public void send(byte[] message) {
+        try {
+            synchronized (out) {
+                out.write(message);
+            }
+        } catch (IOException e) {
+            e.printStackTrace(System.out);
+            close();
         }
     }
 
-    public void send(String message) throws IOException {
+    public void send(String message) {
         send(message.getBytes());
     }
 
@@ -201,8 +221,13 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
     /** closes a {@link Peer} by closing the socket and removing itself from it's {@link Torrent}'s {@link Torrent#torrentlis} */
-    public synchronized void close() throws IOException {
-        socket.close();
+    public synchronized void close() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace(System.out);
+        }
+        receiver.interrupt();
         if (torrent != null) {
             torrent.removePeer(this);
         }
