@@ -23,7 +23,7 @@ public class Receiver extends LoopThread {
         }
         if (len == 0) {
             try {
-                messages.put(Message.keepAlive());
+                messages.put(new KeepAlive());
             } catch (IllegalStateException e) {
                 e.printStackTrace(System.out);
             } catch (InterruptedException e) {

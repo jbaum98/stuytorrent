@@ -220,7 +220,7 @@ public class Peer implements Closeable, AutoCloseable {
         return am_interested;
     }
 
-    /** closes a {@link Peer} by closing the socket and removing itself from it's {@link Torrent}'s {@link Torrent#torrentlis} */
+    /** closes a {@link Peer} by closing the socket and removing itself from it's {@link Torrent}'s {@link Torrent#peers} */
     public synchronized void close() {
         try {
             socket.close();
