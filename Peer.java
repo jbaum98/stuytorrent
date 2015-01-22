@@ -5,6 +5,7 @@ import java.io.BufferedInputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * represents another torrent Client to which we are connected
@@ -25,13 +26,13 @@ public class Peer implements Closeable, AutoCloseable {
     private Death death;
 
     /** if HE is chocking ME */
-    private volatile boolean peer_choking    = true;
+    private AtomicBoolean peer_choking    = new AtomicBoolean(true);
     /** if HE is interested in  ME */
-    private volatile boolean peer_interested = false;
+    private AtomicBoolean peer_interested = new AtomicBoolean(false);
     /** if I am chocking HIM */
-    private volatile boolean am_choking      = true;
+    private AtomicBoolean am_choking      = new AtomicBoolean(true);
     /** if I am chocking HIM */
-    private volatile boolean am_interested   = false;
+    private AtomicBoolean am_interested   = new AtomicBoolean(false);
 
     public Bitfield bitfield = new Bitfield();;
     /**
@@ -171,22 +172,22 @@ public class Peer implements Closeable, AutoCloseable {
 
     /** called when {@link Peer} recieves a choke message */
     public void choke() {
-        peer_choking = true;
+        peer_choking.set(true);
     }
 
     /** called when {@link Peer} recieves an unchoke message */
     public void unchoke() {
-        peer_choking = false;
+        peer_choking.set(false);
     }
 
     /** called when {@link Peer} recieves an interested message */
     public void interested() {
-        peer_interested = true;
+        peer_interested.set(true);
     }
 
     /** called when {@link Peer} recieves a not interested message */
     public void notInterested() {
-        peer_interested = false;
+        peer_interested.set(false);
     }
 
     /** called when {@link Peer} recieves a have message */
@@ -211,19 +212,19 @@ public class Peer implements Closeable, AutoCloseable {
     // CHOKED/INTERESTED GETTERS
 
     public boolean peer_choking() {
-        return peer_choking;
+        return peer_choking.get();
     }
 
     public boolean peer_interested() {
-        return peer_interested;
+        return peer_interested.get();
     }
 
     public boolean am_choking() {
-        return am_choking;
+        return am_choking.get();
     }
 
     public boolean am_interested() {
-        return am_interested;
+        return am_interested.get();
     }
 
     /** closes a {@link Peer} by closing the socket and removing itself from it's {@link Torrent}'s {@link Torrent#peers} */
