@@ -15,6 +15,7 @@ public class Peer implements Closeable, AutoCloseable {
     private final BufferedInputStream in;
     private final Receiver            receiver;
     private final OutputStream        out;
+    private final Responder           responder;
 
     private final Torrent torrent;
 
@@ -24,15 +25,15 @@ public class Peer implements Closeable, AutoCloseable {
     private Death death;
 
     /** if HE is chocking ME */
-    private boolean peer_choking    = true;
+    private volatile boolean peer_choking    = true;
     /** if HE is interested in  ME */
-    private boolean peer_interested = false;
+    private volatile boolean peer_interested = false;
     /** if I am chocking HIM */
-    private boolean am_choking      = true;
+    private volatile boolean am_choking      = true;
     /** if I am chocking HIM */
-    private boolean am_interested   = false;
+    private volatile boolean am_interested   = false;
 
-    public Bitfield bitfield;
+    public Bitfield bitfield = new Bitfield();;
     /**
      * called when we are initiating the connection
      * @param socket  the {@link java.net.Socket} to the Peer
@@ -43,6 +44,7 @@ public class Peer implements Closeable, AutoCloseable {
         in = new BufferedInputStream(socket.getInputStream());
         out = socket.getOutputStream();
         receiver = new Receiver(this, in);
+        responder = new Responder(receiver, this);
 
         this.torrent = torrent;
 
@@ -60,9 +62,7 @@ public class Peer implements Closeable, AutoCloseable {
 
         Message first = receiver.messages.peek();
         if ( first instanceof BitfieldMessage) {
-            bitfield = new Bitfield((BitfieldMessage) first);
-        } else {
-            bitfield  = new Bitfield(torrent.piece_hashes.length);
+            first.action(this);
         }
 
         torrent.addPeer(this);
@@ -79,6 +79,7 @@ public class Peer implements Closeable, AutoCloseable {
         in = new BufferedInputStream(socket.getInputStream());
         out = socket.getOutputStream();
         receiver = new Receiver(this, in);
+        responder = new Responder(receiver,this);
 
         HandshakeInfo received = receiveHandshake();
         info_hash = received.info_hash;
@@ -95,9 +96,7 @@ public class Peer implements Closeable, AutoCloseable {
 
         Message first = receiver.messages.peek();
         if ( first instanceof BitfieldMessage) {
-            bitfield = new Bitfield((BitfieldMessage) first);
-        } else {
-            bitfield  = new Bitfield(torrent.piece_hashes.length);
+            first.action(this);
         }
 
         torrent.addPeer(this);
@@ -164,8 +163,10 @@ public class Peer implements Closeable, AutoCloseable {
 
     /** called when {@link Peer} recieves a keep-alive message */
     public void keepalive() {
-        death.interrupt();
-        death = new Death(this);
+        synchronized (death) {
+            death.interrupt();
+            death = new Death(this);
+        }
     }
 
     /** called when {@link Peer} recieves a choke message */
@@ -184,7 +185,7 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
     /** called when {@link Peer} recieves a not interested message */
-    public void not_interested() {
+    public void notInterested() {
         peer_interested = false;
     }
 
@@ -193,11 +194,16 @@ public class Peer implements Closeable, AutoCloseable {
         bitfield.setPresent(piece_index);
     }
 
+    public void bitfield(byte[] bytes) {
+        bitfield.override(bytes);
+    }
+
     /** called when {@link Peer} recieves a request message */
     public void request(int index, int begin, int length) {
         send(torrent.getChunk(index, begin, length));
     }
 
+    /** called when {@link Peer} recieves a piece message */
     public void piece(int index, int begin, byte[] block) {
         torrent.addChunk(index, begin, block);
     }

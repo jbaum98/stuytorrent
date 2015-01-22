@@ -256,11 +256,15 @@ public class Torrent {
     }
 
     public byte[] getChunk(int index, int begin, int length) {
-        return pieces[index].getChunk(begin, length);
+        synchronized (pieces) {
+            return pieces[index].getChunk(begin, length);
+        }
     }
 
     public void addChunk(int index, int begin, byte[] block) {
-        pieces[index].setData(block, begin);
+        synchronized (pieces) {
+            pieces[index].setData(block, begin);
+        }
     }
 }
 

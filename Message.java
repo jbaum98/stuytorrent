@@ -1,5 +1,6 @@
 public abstract class Message {
     public abstract byte[] toBytes();
+    public abstract void action(Peer peer);
 }
 
 class KeepAlive extends Message {
@@ -7,6 +8,10 @@ class KeepAlive extends Message {
         byte[] bytes = {0, 0, 0, 0};
         return bytes;
     }
+
+    public void action(Peer peer) {
+        peer.keepalive();
+    };
 }
 
 class Choke extends Message {
@@ -14,6 +19,10 @@ class Choke extends Message {
         //             |  length  | id |
         byte[] bytes = {0, 0, 0, 1, 0  };
         return bytes;
+    }
+
+    public void action(Peer peer) {
+        peer.choke();
     }
 }
 
@@ -23,6 +32,10 @@ class Unchoke extends Message {
         byte[] bytes = {0, 0, 0, 1, 1};
         return bytes;
     }
+
+    public void action(Peer peer) {
+        peer.unchoke();
+    }
 }
 
 class Interested extends Message {
@@ -31,6 +44,10 @@ class Interested extends Message {
         byte[] bytes = {0, 0, 0, 1, 2};
         return bytes;
     }
+
+    public void action(Peer peer) {
+        peer.interested();
+    }
 }
 
 class NotInterested extends Message {
@@ -38,6 +55,10 @@ class NotInterested extends Message {
         //             |  length  | id |
         byte[] bytes = {0, 0, 0, 1, 3};
         return bytes;
+    }
+
+    public void action(Peer peer) {
+        peer.notInterested();
     }
 }
 
@@ -58,20 +79,17 @@ class Have extends Message {
         byte[] bytes = {0, 0, 0, 1, 4,  b[0], b[1], b[2], b[3] };
         return bytes;
     }
+
+    public void action(Peer peer) {
+        peer.have(piece_index.integer);
+    }
 }
 
 class BitfieldMessage extends Message {
-    public final boolean[] bitfield;
+    public final byte[] bitfield;
 
-    public BitfieldMessage(byte[] bytes) throws IllegalArgumentException {
-        bitfield = new boolean[bytes.length];
-        for (int i = 0; i < bytes.length; i++) {
-            if (bytes[i] == 0 || bytes[i] == 1) {
-                bitfield[i] = bytes[i] == 1;
-            } else {
-                throw new IllegalArgumentException("Input consists of non-binary data");
-            }
-        }
+    public BitfieldMessage(byte[] bytes) {
+        this.bitfield = bytes;
     }
 
     public byte[] toBytes() {
@@ -86,11 +104,15 @@ class BitfieldMessage extends Message {
 
         // copy bitfield
         for(int i = start.length; i < bytes.length; i++) {
-            bytes[i] = (byte) (bitfield[i-start.length] ? 1 : 0);
+            bytes[i] = bitfield[i-start.length];
         }
 
         return bytes;
 
+    }
+
+    public void action(Peer peer) {
+        peer.bitfield(bitfield);
     }
 }
 
@@ -112,13 +134,17 @@ class Request extends Message {
     }
 
     public byte[] toBytes() {
-        //             |  length  | id |
+        //             |  length   | id |
         byte[] bytes = {0, 0, 0, 13, 6,
             index.bytes[0],  index.bytes[1],  index.bytes[2],  index.bytes[3],
             begin.bytes[0],  begin.bytes[1],  begin.bytes[2],  begin.bytes[3],
             length.bytes[0], length.bytes[1], length.bytes[2], length.bytes[3],
         };
         return bytes;
+    }
+
+    public void action(Peer peer) {
+        peer.request(index.integer, begin.integer, length.integer);
     }
 }
 
@@ -148,5 +174,9 @@ class PieceMessage extends Message {
             begin.bytes[0],  begin.bytes[1],  begin.bytes[2],  begin.bytes[3],
         };
         return bytes;
+    }
+
+    public void action(Peer peer) {
+        peer.piece(index.integer, begin.integer, block);
     }
 }
