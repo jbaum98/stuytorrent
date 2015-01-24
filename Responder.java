@@ -18,5 +18,6 @@ public class Responder extends LoopThread {
         message.action(peer);
     }
 
-    protected void cleanup() {}
+    protected void cleanup() {
+    }
 }
