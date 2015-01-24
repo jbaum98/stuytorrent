@@ -13,17 +13,17 @@ import java.util.Arrays;
  */
 public class Peer implements Closeable, AutoCloseable {
     private static final Charset charset = StandardCharsets.ISO_8859_1;
-    public  final Socket socket;
-    private final InputStream in;
-    private final Receiver            receiver;
-    private final OutputStream        out;
-    private final Responder           responder;
-    private final Downloader          downloader;
+    public  Socket socket;
+    private InputStream in;
+    private Receiver            receiver;
+    private OutputStream        out;
+    private Responder           responder;
+    private Downloader          downloader;
 
-    private final Torrent torrent;
+    private Torrent torrent;
 
-    public  final String id;
-    private final byte[] info_hash;
+    private String id;
+    private byte[] info_hash;
 
     private Death death;
 
@@ -36,7 +36,7 @@ public class Peer implements Closeable, AutoCloseable {
     /** if I am chocking HIM */
     private AtomicBoolean am_interested   = new AtomicBoolean(false);
 
-    public Bitfield bitfield = new Bitfield();
+    public Bitfield bitfield;
     /**
      * called when we are initiating the connection
      * @param socket  the {@link java.net.Socket} to the Peer
@@ -45,43 +45,27 @@ public class Peer implements Closeable, AutoCloseable {
     public Peer(Socket socket, Torrent torrent) throws IOException {
         startDeath();
         this.socket = socket;
-        in = socket.getInputStream();
-        out = socket.getOutputStream();
-        receiver = new Receiver(this, in);
-        receiver.start();
-        responder = new Responder(receiver, this);
-        responder.start();
-
+        setStreams();
         this.torrent = torrent;
 
         sendHandshake();
-        System.out.println("send handshake");
+        System.out.println("sent handshake");
 
-        HandshakeInfo received = receiveHandshake();
-
+        receiveHandshake();
         System.out.println("received handshake");
 
-        info_hash = received.info_hash;
-        id = received.id;
-
-        downloader = new Downloader(this, torrent.pieces);
-        System.out.println("our hash: " + SHA1.bytesToHex(torrent.info_hash));
-        System.out.println("their hash: " + SHA1.bytesToHex(info_hash));
-        // verify the info_hash
-        if (! Arrays.equals(torrent.info_hash, info_hash)) {
+        if (!verify()) {
             close();
             return;
         }
-        
         System.out.println("verified");
 
-        Message first = receiver.messages.peek();
-        if ( first instanceof BitfieldMessage) {
-            first.action(this);
-        }
-
+        setBitfield();
+        setDownloader();
         torrent.addPeer(this);
-        downloader.start();
+        System.out.println("starting");
+        startThreads();
+        System.out.println("started");
     }
 
     /**
@@ -92,18 +76,11 @@ public class Peer implements Closeable, AutoCloseable {
     public Peer(Socket socket, TorrentList torrents) throws IOException {
         startDeath();
         this.socket = socket;
-        in = socket.getInputStream();
-        out = socket.getOutputStream();
-        receiver = new Receiver(this, in);
-        responder = new Responder(receiver,this);
+        setStreams();
 
-        HandshakeInfo received = receiveHandshake();
-        info_hash = received.info_hash;
-        id = received.id;
+        receiveHandshake();
 
-        // verify info_hash and find torrent
         torrent = torrents.getTorrent(info_hash);
-        downloader = new Downloader(this, torrent.pieces);
         if (torrent == null) {
             close();
             return;
@@ -111,19 +88,22 @@ public class Peer implements Closeable, AutoCloseable {
 
         sendHandshake();
 
-        Message first = receiver.messages.peek();
-        if ( first instanceof BitfieldMessage) {
-            first.action(this);
-        }
-
+        setBitfield();
+        setDownloader();
         torrent.addPeer(this);
-        downloader.start();
-        System.out.println(id);
+        startThreads();
     }
 
     private void startDeath() {
         death = new Death(this);
         death.start();
+    }
+
+    private void setStreams() throws IOException {
+        in = socket.getInputStream();
+        out = socket.getOutputStream();
+        receiver = new Receiver(this, in);
+        responder = new Responder(receiver, this);
     }
 
     /** sends a handshake
@@ -138,8 +118,8 @@ public class Peer implements Closeable, AutoCloseable {
      * receives a handshake and sets {@link id} and {@link info_hash}
      * @return the info_hash from the handshake
      */
-    public HandshakeInfo receiveHandshake() throws IOException {
-        byte[] pstrlen, pstr, reserved, info_hash, peer_id_bytes;
+    public void receiveHandshake() throws IOException {
+        byte[] pstrlen, pstr, reserved, peer_id_bytes;
 
         pstrlen = new byte[1];
         in.read(pstrlen);
@@ -155,10 +135,26 @@ public class Peer implements Closeable, AutoCloseable {
 
         peer_id_bytes = new byte[20];
         in.read(peer_id_bytes);
+        id = new String(peer_id_bytes, charset);
+    }
 
-        String id = new String(peer_id_bytes, charset);
+    private boolean verify() {
+        return Arrays.equals(torrent.info_hash, info_hash);
+    }
 
-        return new HandshakeInfo(info_hash, id);
+    private void setBitfield() {
+        bitfield = new Bitfield(torrent.pieces.length);
+    }
+
+    private void setDownloader() {
+        downloader = new Downloader(this, torrent.pieces);
+    }
+
+    private void startThreads() {
+        receiver.start();
+        responder.start();
+        downloader.start();
+
     }
 
     public void send(byte[] message) {
@@ -244,7 +240,7 @@ public class Peer implements Closeable, AutoCloseable {
         am_interested.set(true);
         send(new Unchoke());
     }
-    
+
     public void notInterested() {
         am_interested.set(false);
         send(new NotInterested());
@@ -298,14 +294,4 @@ public class Peer implements Closeable, AutoCloseable {
         return id.hashCode();
     }
 
-}
-
-class HandshakeInfo {
-    public final byte[] info_hash;
-    public final String id;
-
-    public HandshakeInfo(byte[] info_hash, String id) {
-        this.info_hash = info_hash;
-        this.id = id;
-    }
 }

@@ -19,7 +19,7 @@ public class Piece {
         this.done = new AtomicBoolean(false);
         this.hash = hash;
         this.data = new byte[length];
-        
+
         fillNeed();
     }
 

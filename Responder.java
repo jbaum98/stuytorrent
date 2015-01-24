@@ -11,7 +11,7 @@ public class Responder extends LoopThread {
         Message message;
         try {
             message = receiver.messages.take();
-            System.out.println("We received a message");
+            System.out.println(message + " from " + peer);
         } catch (InterruptedException e) {
             interrupt();
             return;

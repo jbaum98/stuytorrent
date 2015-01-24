@@ -31,12 +31,13 @@ public class Torrent {
 
     public final String peer_id;
 
-    public final BencodingMap metainfo;
-    public final BencodingMap info;
-    public final byte[]  piece_hashes;
-    public final long    piece_size;
-    public final Piece[] pieces;
-    public final long    size;
+    public BencodingMap metainfo;
+    public BencodingMap info;
+    public byte[]  piece_hashes;
+    public int    piece_size;
+    public int     num_pieces;
+    public Piece[] pieces;
+    public long    size;
 
     public byte[] info_hash;
 
@@ -44,7 +45,7 @@ public class Torrent {
     private int uploaded = 0;
     private int downloaded = 0;
 
-    public final byte[] handshake;
+    public byte[] handshake;
 
     /**
      * reads and parses the metainfo file
@@ -57,21 +58,11 @@ public class Torrent {
 
         this.peer_id = new String(sha1.digest(Double.toString(Math.random())), charset); // TODO better peer_id
 
-        // READ AND PARSE FILE
-        Path path = Paths.get(filename);
-        byte[] bytes = Files.readAllBytes(path);
-        String metainfo_string = new String(bytes, charset);
-
-        metainfo = new BencodingMap(metainfo_string);
-        info = (BencodingMap) (metainfo.get("info"));
-        //////////////////////
+        parseMeta(Paths.get(filename));
 
         // CALCULATE SIZE
-        piece_hashes = ((String)info.get("pieces")).getBytes(charset);
-        piece_size = (long) info.get("piece length");
-        int num_pieces = piece_hashes.length / 20;
-        pieces = new Piece[num_pieces];
-        size = piece_size * num_pieces;
+        calculateSize();
+        fillPieces();
 
         // SET INFO HASH
         info_hash = sha1.digest(info.bencode());
@@ -96,6 +87,31 @@ public class Torrent {
             handshake[pstrlen+29+i] = peer_id_bytes[i];
         }
         //////////////////////
+    }
+
+    private void parseMeta(Path metainfo_file) throws IOException {
+        byte[] bytes = Files.readAllBytes(metainfo_file);
+        String metainfo_string = new String(bytes, charset);
+
+        metainfo = new BencodingMap(metainfo_string);
+        info = (BencodingMap) (metainfo.get("info"));
+    }
+
+    private void calculateSize() {
+        piece_hashes = ((String)info.get("pieces")).getBytes(charset);
+        Long piece_size_long = (Long) info.get("piece length");
+        System.out.println(piece_size_long);
+        piece_size = (int) Math.max(Math.min(Integer.MAX_VALUE, piece_size_long), Integer.MIN_VALUE);
+        num_pieces = piece_hashes.length / 20;
+        size = piece_size * num_pieces;
+    }
+
+    private void fillPieces() {
+        pieces = new Piece[num_pieces];
+        for (int i = 0; i < num_pieces; i++) {
+            byte[] hash = Arrays.copyOfRange(piece_hashes, i*20, (i+1)*20);
+            pieces[i] = new Piece(hash, piece_size);
+        }
     }
 
     @Override

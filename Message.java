@@ -1,6 +1,9 @@
+import java.util.Arrays;
+
 public abstract class Message {
     public abstract byte[] toBytes();
     public abstract void action(Peer peer);
+    public abstract String toString();
 }
 
 class KeepAlive extends Message {
@@ -12,6 +15,10 @@ class KeepAlive extends Message {
     public void action(Peer peer) {
         peer.keepalive();
     };
+
+    public String toString() {
+        return "KeepAlive";
+    }
 }
 
 class Choke extends Message {
@@ -23,6 +30,10 @@ class Choke extends Message {
 
     public void action(Peer peer) {
         peer.receiveChoke();
+    }
+
+    public String toString() {
+        return "Choke";
     }
 }
 
@@ -36,6 +47,10 @@ class Unchoke extends Message {
     public void action(Peer peer) {
         peer.receiveUnchoke();
     }
+
+    public String toString() {
+        return "Unchoke";
+    }
 }
 
 class Interested extends Message {
@@ -48,6 +63,10 @@ class Interested extends Message {
     public void action(Peer peer) {
         peer.receiveInterested();
     }
+
+    public String toString() {
+        return "Interested";
+    }
 }
 
 class NotInterested extends Message {
@@ -59,6 +78,10 @@ class NotInterested extends Message {
 
     public void action(Peer peer) {
         peer.receiveNotInterested();
+    }
+
+    public String toString() {
+        return "Not Interested";
     }
 }
 
@@ -82,6 +105,10 @@ class Have extends Message {
 
     public void action(Peer peer) {
         peer.have(piece_index.integer);
+    }
+
+    public String toString() {
+        return "Have <" + piece_index + ">";
     }
 }
 
@@ -113,6 +140,10 @@ class BitfieldMessage extends Message {
 
     public void action(Peer peer) {
         peer.bitfield(bitfield);
+    }
+
+    public String toString() {
+        return "BitfieldMessage " + Arrays.toString(bitfield);
     }
 }
 
@@ -146,6 +177,10 @@ class Request extends Message {
     public void action(Peer peer) {
         peer.request(index.integer, begin.integer, length.integer);
     }
+
+    public String toString() {
+        return "Request <index " + index + "> <begin: " + begin + "> <length: " + length + ">";
+    }
 }
 
 class PieceMessage extends Message {
@@ -178,5 +213,9 @@ class PieceMessage extends Message {
 
     public void action(Peer peer) {
         peer.piece(index.integer, begin.integer, block);
+    }
+
+    public String toString() {
+        return "Request <index " + index + "> <begin: " + begin + ">";
     }
 }
