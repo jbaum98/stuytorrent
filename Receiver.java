@@ -17,7 +17,7 @@ public class Receiver extends LoopThread {
     protected void task() {
         int len;
         try{
-            len = in.read();
+            len = in.read() & 0xFF;
         } catch (IOException e) {
             interrupt();
             return;
