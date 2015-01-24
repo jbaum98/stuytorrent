@@ -75,6 +75,7 @@ public class Torrent {
 
         // SET INFO HASH
         info_hash = sha1.digest(info.bencode());
+        System.out.println(Arrays.toString(info_hash));
         //////////////////////
 
         // SET HANDSHAKE
@@ -91,8 +92,8 @@ public class Torrent {
 
         byte[] peer_id_bytes = peer_id.getBytes(charset);
         for(int i = 0; i<20; i++) {
-            handshake[pstrlen+9] = info_hash[i];
-            handshake[pstrlen+29] = peer_id_bytes[i];
+            handshake[pstrlen+9+i] = info_hash[i];
+            handshake[pstrlen+29+i] = peer_id_bytes[i];
         }
         //////////////////////
     }
@@ -257,13 +258,13 @@ public class Torrent {
 
     public byte[] getChunk(int index, int begin, int length) {
         synchronized (pieces) {
-            return pieces[index].getChunk(begin, length);
+            return pieces[index].getBytes(begin, length);
         }
     }
 
     public void addChunk(int index, int begin, byte[] block) {
         synchronized (pieces) {
-            pieces[index].setData(block, begin);
+            pieces[index].setData(begin, block);
         }
     }
 }

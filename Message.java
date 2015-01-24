@@ -22,7 +22,7 @@ class Choke extends Message {
     }
 
     public void action(Peer peer) {
-        peer.choke();
+        peer.receiveChoke();
     }
 }
 
@@ -34,7 +34,7 @@ class Unchoke extends Message {
     }
 
     public void action(Peer peer) {
-        peer.unchoke();
+        peer.receiveUnchoke();
     }
 }
 
@@ -46,7 +46,7 @@ class Interested extends Message {
     }
 
     public void action(Peer peer) {
-        peer.interested();
+        peer.receiveInterested();
     }
 }
 
@@ -58,7 +58,7 @@ class NotInterested extends Message {
     }
 
     public void action(Peer peer) {
-        peer.notInterested();
+        peer.receiveNotInterested();
     }
 }
 

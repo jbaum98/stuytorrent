@@ -1,11 +1,12 @@
 import java.net.Socket;
 import java.io.IOException;
 import java.io.Closeable;
-import java.io.BufferedInputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Arrays;
 
 /**
  * represents another torrent Client to which we are connected
@@ -13,10 +14,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Peer implements Closeable, AutoCloseable {
     private static final Charset charset = StandardCharsets.ISO_8859_1;
     public  final Socket socket;
-    private final BufferedInputStream in;
+    private final InputStream in;
     private final Receiver            receiver;
     private final OutputStream        out;
     private final Responder           responder;
+    private final Downloader          downloader;
 
     private final Torrent torrent;
 
@@ -34,32 +36,44 @@ public class Peer implements Closeable, AutoCloseable {
     /** if I am chocking HIM */
     private AtomicBoolean am_interested   = new AtomicBoolean(false);
 
-    public Bitfield bitfield = new Bitfield();;
+    public Bitfield bitfield = new Bitfield();
     /**
      * called when we are initiating the connection
      * @param socket  the {@link java.net.Socket} to the Peer
      * @param torrent the {@link Torrent} for which we want to download make a connection
      */
     public Peer(Socket socket, Torrent torrent) throws IOException {
+        startDeath();
         this.socket = socket;
-        in = new BufferedInputStream(socket.getInputStream());
+        in = socket.getInputStream();
         out = socket.getOutputStream();
         receiver = new Receiver(this, in);
+        receiver.start();
         responder = new Responder(receiver, this);
+        responder.start();
 
         this.torrent = torrent;
 
         sendHandshake();
+        System.out.println("send handshake");
 
         HandshakeInfo received = receiveHandshake();
+
+        System.out.println("received handshake");
+
         info_hash = received.info_hash;
         id = received.id;
 
+        downloader = new Downloader(this, torrent.pieces);
+        System.out.println("our hash: " + SHA1.bytesToHex(torrent.info_hash));
+        System.out.println("their hash: " + SHA1.bytesToHex(info_hash));
         // verify the info_hash
-        if (! info_hash.equals(torrent.info_hash)) {
+        if (! Arrays.equals(torrent.info_hash, info_hash)) {
             close();
             return;
         }
+        
+        System.out.println("verified");
 
         Message first = receiver.messages.peek();
         if ( first instanceof BitfieldMessage) {
@@ -67,7 +81,7 @@ public class Peer implements Closeable, AutoCloseable {
         }
 
         torrent.addPeer(this);
-        startDeath();
+        downloader.start();
     }
 
     /**
@@ -76,8 +90,9 @@ public class Peer implements Closeable, AutoCloseable {
      * @param torrents the {@link Client#torrents} so we can determine if we are serving the torrent the Peer has requested
      */
     public Peer(Socket socket, TorrentList torrents) throws IOException {
+        startDeath();
         this.socket = socket;
-        in = new BufferedInputStream(socket.getInputStream());
+        in = socket.getInputStream();
         out = socket.getOutputStream();
         receiver = new Receiver(this, in);
         responder = new Responder(receiver,this);
@@ -88,6 +103,7 @@ public class Peer implements Closeable, AutoCloseable {
 
         // verify info_hash and find torrent
         torrent = torrents.getTorrent(info_hash);
+        downloader = new Downloader(this, torrent.pieces);
         if (torrent == null) {
             close();
             return;
@@ -101,7 +117,7 @@ public class Peer implements Closeable, AutoCloseable {
         }
 
         torrent.addPeer(this);
-        startDeath();
+        downloader.start();
         System.out.println(id);
     }
 
@@ -114,6 +130,7 @@ public class Peer implements Closeable, AutoCloseable {
      * <b>{@link torrent}</b> must be set
      */
     public void sendHandshake() throws IOException {
+        System.out.println(Arrays.toString(torrent.handshake));
         send(torrent.handshake);
     }
 
@@ -134,7 +151,7 @@ public class Peer implements Closeable, AutoCloseable {
         in.read(reserved);
 
         info_hash = new byte[20];
-        in.read(info_hash);
+        System.out.println("read " + in.read(info_hash));
 
         peer_id_bytes = new byte[20];
         in.read(peer_id_bytes);
@@ -159,6 +176,10 @@ public class Peer implements Closeable, AutoCloseable {
         send(message.getBytes());
     }
 
+    public void send(Message message) {
+        send(message.toBytes());
+    }
+
     // MESSAGE METHODS
     // @see <a href="https://wiki.theory.org/BitTorrentSpecification#Messages">Bit Torrent Specification</a>
 
@@ -171,22 +192,22 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
     /** called when {@link Peer} recieves a choke message */
-    public void choke() {
+    public void receiveChoke() {
         peer_choking.set(true);
     }
 
     /** called when {@link Peer} recieves an unchoke message */
-    public void unchoke() {
+    public void receiveUnchoke() {
         peer_choking.set(false);
     }
 
     /** called when {@link Peer} recieves an interested message */
-    public void interested() {
+    public void receiveInterested() {
         peer_interested.set(true);
     }
 
     /** called when {@link Peer} recieves a not interested message */
-    public void notInterested() {
+    public void receiveNotInterested() {
         peer_interested.set(false);
     }
 
@@ -207,6 +228,26 @@ public class Peer implements Closeable, AutoCloseable {
     /** called when {@link Peer} recieves a piece message */
     public void piece(int index, int begin, byte[] block) {
         torrent.addChunk(index, begin, block);
+    }
+
+    public void choke() {
+        am_choking.set(true);
+        send(new Choke());
+    }
+
+    public  void unchoke() {
+        am_choking.set(false);
+        send(new Unchoke());
+    }
+
+    public void interested() {
+        am_interested.set(true);
+        send(new Unchoke());
+    }
+    
+    public void notInterested() {
+        am_interested.set(false);
+        send(new NotInterested());
     }
 
     // CHOKED/INTERESTED GETTERS

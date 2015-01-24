@@ -55,6 +55,14 @@ public class SHA1 {
         }
     }
 
+    public static String bytesToHex(byte[] bytes) {
+        Formatter formatter = new Formatter();
+        for (byte b : bytes) {
+            formatter.format("%%%02x", b);
+        }
+        return formatter.toString();
+    }
+
     public static void main(String[] args) {
         String hex = "a999";
         byte[] expect = {-87, -103};

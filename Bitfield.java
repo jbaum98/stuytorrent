@@ -5,6 +5,7 @@ import java.util.Arrays;
  */
 public class Bitfield {
     private boolean[] bits;
+    private boolean done;
 
     public Bitfield() {
         bits = new boolean[0];
@@ -31,6 +32,7 @@ public class Bitfield {
                 b >>>= 1;
             }
         }
+        return bits;
     }
 
     /**

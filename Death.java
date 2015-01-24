@@ -29,10 +29,6 @@ public class Death extends Thread {
     }
 
     private void killPeer() {
-        try {
-            peer.close();
-        } catch (IOException e) {
-            e.printStackTrace(System.out);
-        }
+        peer.close();
     }
 }

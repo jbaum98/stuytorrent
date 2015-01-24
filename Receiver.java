@@ -1,15 +1,15 @@
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.Arrays;
-import java.io.BufferedInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 
 public class Receiver extends LoopThread {
-    private final BufferedInputStream in;
+    private final InputStream in;
     private final Peer peer;
 
     public final LinkedBlockingQueue<Message> messages = new LinkedBlockingQueue<Message>();
 
-    public Receiver(Peer peer, BufferedInputStream in) {
+    public Receiver(Peer peer, InputStream in) {
         this.peer = peer;
         this.in = in;
     }
