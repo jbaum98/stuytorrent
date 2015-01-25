@@ -266,8 +266,13 @@ public class Peer implements Closeable, AutoCloseable {
 
     /** closes a {@link Peer} by closing the socket and removing itself from it's {@link Torrent}'s {@link Torrent#peers} */
     public synchronized void close() {
+        System.out.println("CLOSED "+this);
         try {
             socket.close();
+            death.interrupt();
+            if (receiver != null) receiver.interrupt();
+            if (responder != null) responder.interrupt();
+            if (downloader != null) downloader.interrupt();
         } catch (IOException e) {
             e.printStackTrace(System.out);
         }

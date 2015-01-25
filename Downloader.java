@@ -22,7 +22,7 @@ public class Downloader extends LoopThread {
         try {
             this.sleep(1000);
         } catch (InterruptedException e) {
-            /* we want to be interrupted */
+            interrupt();
         }
     }
 

@@ -7,7 +7,7 @@ public class Receiver extends LoopThread {
     private final InputStream in;
     private final Peer peer;
 
-    public final LinkedBlockingQueue<Message> messages = new LinkedBlockingQueue<Message>();
+    public final LinkedBlockingQueue<Message> messages = new LinkedBlockingQueue<Message>(1000);
 
     public Receiver(Peer peer, InputStream in) {
         this.peer = peer;
@@ -22,18 +22,27 @@ public class Receiver extends LoopThread {
             interrupt();
             return;
         }
-        if (len == 0) {
+        if (len < 0) {
+            peer.close();
+            interrupt();
+            return;
+        } else if (len == 0) {
             try {
                 messages.put(new KeepAlive());
             } catch (InterruptedException e) {
-                /* we expect to be interrupted */
+                interrupt();
             }
             return;
         } else {
             byte[] bytes = new byte[len];
+            int status;
             try {
-                in.read(bytes);
+                status = in.read(bytes);
             } catch (IOException e) {
+                interrupt();
+                return;
+            }
+            if (status < 0) {
                 interrupt();
                 return;
             }
