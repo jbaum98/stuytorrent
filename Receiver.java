@@ -18,6 +18,7 @@ public class Receiver extends LoopThread {
         try{
             int len = in.readInt();
             if (len < 0) {
+                System.out.println("Closed because negative status");
                 peer.close();
                 interrupt();
                 return;
@@ -53,7 +54,7 @@ public class Receiver extends LoopThread {
                 case 5:
                     byte[] bitfield = new byte[len-1];
                     in.readFully(bitfield);
-                    System.out.println(Arrays.toString(bitfield));
+                    //System.out.println(Arrays.toString(bitfield));
                     message = new BitfieldMessage(bitfield);
                     break;
                 case 6:
@@ -65,6 +66,7 @@ public class Receiver extends LoopThread {
                     break;
                 case 7:
                     index  = in.readInt();
+                    if (index == 2218) { System.out.println("we got 2218");}
                     begin  = in.readInt();
                     byte[] block  = new byte[len-9];
                     in.readFully(block);
@@ -77,6 +79,7 @@ public class Receiver extends LoopThread {
                         messages.put(message);
                     } catch (InterruptedException e) {
                         interrupt();
+                        System.out.println("closed becuase error onmessage");
                         peer.close();
                         return;
                     }
@@ -84,12 +87,16 @@ public class Receiver extends LoopThread {
             }
         } catch (IOException e) {
             interrupt();
+            System.out.println("closed becuase error on read");
             peer.close();
             return;
         }
     }
     
     protected void cleanup() {
-        if (! peer.socket.isClosed()) { peer.close(); }
+        if (! peer.socket.isClosed()) { 
+            System.out.println("closed becuase receiver interrupted");
+            peer.close();
+        }
     }
 }

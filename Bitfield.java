@@ -24,7 +24,7 @@ public class Bitfield {
         for (int i = 0; i < bits.length; i++) {
             bits[i] = incoming[i];
         }
-        bits[bits.length-1] = false;
+        //bits[bits.length-1] = false;
         //bits[bits.length-2] = false;
         // bits[bits.length-3] = false;
         //System.out.println(Arrays.toString(bits));

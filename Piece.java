@@ -9,10 +9,10 @@ import java.util.Random;
  */
 
 public class Piece {
-    private byte[] data;
+    public byte[] data;
     private final byte[] hash;
     private final static SHA1 sha1 = new SHA1();
-    private ArrayList<Chunk> need;
+    public ArrayList<Chunk> need;
     public  final AtomicBoolean done;
     public final int index;
 
@@ -57,10 +57,11 @@ public class Piece {
     }
 
     private void setBytes(int begin, byte[] block) {
-        for (int i = 0; i < block.length; i++) {
-            data[begin + i] = block[i];
+        if (!(done.get())) {
+            for (int i = 0; i < block.length; i++) {
+                data[begin + i] = block[i];
+            }
         }
-
     }
 
     private int findChunk(int begin) {
@@ -94,10 +95,12 @@ public class Piece {
         } else {
             // WE'RE DONE!!!
             if (Arrays.equals(calculateHash(), hash)) {
-                done.set(true);
+                //done.set(true);
                 return null;
             } else {
                 clear(); // ;o
+                done.set(false);
+                System.out.println("OH NO MY EYES "+index);
                 return getRequest();
             }
         }
@@ -112,6 +115,9 @@ public class Piece {
         return sha1.digest(data);
     }
 
+    public String toString() {
+        return "Piece: " + index;
+    }
 }
 
 class Chunk {

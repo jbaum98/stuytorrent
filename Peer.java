@@ -56,6 +56,7 @@ public class Peer implements Closeable, AutoCloseable {
         System.out.println("received handshake");
 
         if (!verify()) {
+            System.out.println("closed because unverified");
             close();
             return;
         }
@@ -83,6 +84,7 @@ public class Peer implements Closeable, AutoCloseable {
 
         torrent = torrents.getTorrent(info_hash);
         if (torrent == null) {
+            System.out.println("Couldn't find torrent so closed");
             close();
             return;
         }
@@ -163,17 +165,27 @@ public class Peer implements Closeable, AutoCloseable {
                 out.write(message);
             }
         } catch (IOException e) {
-            e.printStackTrace(System.out);
+            System.out.println("Error on send");
             close();
         }
     }
 
     public void send(String message) {
+        System.out.println("Sending " + message + " to " +this);
         send(message.getBytes());
     }
 
     public void send(Message message) {
         //System.out.println("Sent " + this + " " + message);
+        if (message instanceof Request) {
+            if (((Request)message).index == 2216 ) {
+                //   System.out.println("tried a " +2216 + " with " + this);
+            } else if (((Request)message).index == 2217 ) {
+                //System.out.println("tried a " +2217 + " with " + this);
+            } else if (((Request)message).index == 2218 ) {
+                System.out.println("tried a " +2218 + " with " + this);
+            }
+        }
         send(message.toBytes());
     }
 

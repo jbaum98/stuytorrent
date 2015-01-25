@@ -17,6 +17,7 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.net.HttpURLConnection;
 import java.net.Socket;
+import java.io.FileOutputStream;
 
 /**
  * represents a torrent we want to download
@@ -90,7 +91,7 @@ public class Torrent {
             byte[] hash = Arrays.copyOfRange(piece_hashes, i*20, (i+1)*20);
             pieces[i] = new Piece(hash, piece_size,i);
         }
-        int overflow = (int) ((piece_size * num_pieces)-size);
+        int overflow = (int) (size - (num_pieces-1)*piece_size);
         pieces[pieces.length - 1 ] = new Piece(Arrays.copyOfRange(piece_hashes, (num_pieces - 1)*20, num_pieces*20), overflow, num_pieces-1);
     }
 
@@ -273,12 +274,18 @@ public class Torrent {
     }
 
     public void addChunk(int index, int begin, byte[] block) {
+        if (index == 2218) { System.out.println("setting a chunk in " + 2218);}
         pieces[index].setData(begin, block);
     }
     
     public void done(Piece piece) {
         if (piece != null) {
-            for (Peer recip : peers) {
+            piece.done.set(true);
+            Peer[] peers_copy;
+            synchronized (peers) {
+                 peers_copy = peers.toArray(new Peer[0]);
+            }
+            for (Peer recip : peers_copy) {
                 System.out.println("sending ahve to " + recip);
                 recip.send(new Have(piece.index));
             }
@@ -294,10 +301,36 @@ public class Torrent {
             }
         }
         System.out.println("\n");
-        //System.out.println("We're done!");
+        if (out) {
+            try ( FileOutputStream file = new FileOutputStream("out")) {
+                    for (Piece p : pieces) {
+                        file.write(p.data);
+                    }
+                } catch (IOException e) {
+                System.out.println("Eror on writing");
+            }
+            synchronized(peers) {
+                for (Peer peer : peers) {
+                    peer.close();
+                }
+            }
+        }
+    }
+    
+    public static void main(String[] args) {
+        byte[] b1 = {1, 2, 3};
+        byte[] b2 = {3,4, 5};
+        byte[][] bs = {b1, b2};
+        try ( FileOutputStream file = new FileOutputStream("out")) {
+                for (byte[] b : bs) {
+                        file.write(b);
+                    }
+                } catch (IOException e) {
+                System.out.println("Eror on writing");
+            }
     }
 }
-
+    
 /** stores information needed to connect to a new Peer */
 class PeerToBe extends Thread {
     private String hostname;

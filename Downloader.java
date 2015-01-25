@@ -13,27 +13,27 @@ public class Downloader extends LoopThread {
     }
     
     protected void task() {
-        ArrayList<Piece> needs = getNeededPieces();
-        Random r = new Random();
-        if (needs.size() == 0) {
-            peer.send(new KeepAlive());
-            return;
-        }
-        for (int i = 0; i < 100; i++) {
-            Piece p = needs.get(r.nextInt(needs.size()));
-            Chunk chunk = p.getRequest();
-            if (chunk != null) {
-                peer.send(chunk.toRequest(p.index));
-            } else if (!(p.done.get())) {
-                peer.torrent.done(p);
+        if (!(peer.peer_choking())) {
+            ArrayList<Piece> needs = getNeededPieces();
+            Random r = new Random();
+            if (needs.size() == 0) {
+                return;
+            }
+            for (int i = 0; i < 10; i++) {
+                Piece p = needs.get(r.nextInt(needs.size()));
+                Chunk chunk = p.getRequest();
+                if (chunk != null) {
+                    peer.send(chunk.toRequest(p.index));
+                } else if (!(p.done.get())) {
+                    peer.torrent.done(p);
+                }
+            }
+            try {
+                this.sleep(10000/needs.size());
+            } catch (InterruptedException e) {
+                interrupt();
             }
         }
-        try {
-            this.sleep(100);
-        } catch (InterruptedException e) {
-            interrupt();
-        }
-        peer.send(new KeepAlive());
     }
 
     protected void cleanup() {}

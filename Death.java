@@ -29,6 +29,7 @@ public class Death extends Thread {
     }
 
     private void killPeer() {
+        System.out.println("Death killed " + peer);
         peer.close();
     }
 }
