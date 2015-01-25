@@ -12,11 +12,12 @@ public class Driver {
         Client client = new Client(6666);
         client.start();
         client.addTorrent(filename);
+        Torrent t = client.torrents.iterator().next();
         BufferedReader in = new BufferedReader( new InputStreamReader(System.in));
         try {
             String line = in.readLine();
             while (line != null) {
-                client.torrents.iterator().next().done(null);
+                System.out.println(t.status());
                 line = in.readLine();
             }
         } catch (IOException e) {

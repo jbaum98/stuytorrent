@@ -11,7 +11,6 @@ public class Responder extends LoopThread {
         Message message;
         try {
             message = receiver.messages.take();
-            //System.out.println(message + " from " + peer);
         } catch (InterruptedException e) {
             interrupt();
             return;
@@ -20,6 +19,5 @@ public class Responder extends LoopThread {
         message.action(peer);
     }
 
-    protected void cleanup() {
-    }
+    protected void cleanup() {}
 }

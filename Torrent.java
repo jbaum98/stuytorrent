@@ -89,10 +89,10 @@ public class Torrent {
         pieces = new Piece[num_pieces];
         for (int i = 0; i < num_pieces - 1; i++) {
             byte[] hash = Arrays.copyOfRange(piece_hashes, i*20, (i+1)*20);
-            pieces[i] = new Piece(hash, piece_size,i);
+            pieces[i] = new Piece(hash, piece_size,i,this);
         }
         int overflow = (int) (size - (num_pieces-1)*piece_size);
-        pieces[pieces.length - 1 ] = new Piece(Arrays.copyOfRange(piece_hashes, (num_pieces - 1)*20, num_pieces*20), overflow, num_pieces-1);
+        pieces[pieces.length - 1 ] = new Piece(Arrays.copyOfRange(piece_hashes, (num_pieces - 1)*20, num_pieces*20), overflow, num_pieces-1, this);
     }
 
     private void setHandshake() {
@@ -274,49 +274,44 @@ public class Torrent {
     }
 
     public void addChunk(int index, int begin, byte[] block) {
-        if (index == 2218) { System.out.println("setting a chunk in " + 2218);}
-        pieces[index].setData(begin, block);
-    }
-    
-    public void done(Piece piece) {
-        if (piece != null) {
-            piece.done.set(true);
-            Peer[] peers_copy;
-            synchronized (peers) {
-                 peers_copy = peers.toArray(new Peer[0]);
-            }
-            for (Peer recip : peers_copy) {
-                System.out.println("sending ahve to " + recip);
-                recip.send(new Have(piece.index));
-            }
+        Piece piece = pieces[index];
+        Request outstanding = piece.getOutstandingRequest();
+        if (outstanding.begin == begin && outstanding.length == block.length) {
+            piece.setData(block);
         }
-        boolean out = true;
+    }
+
+    public String status() {
+        String out = new String();
         for (int i = 0; i < pieces.length; i++) {
             Piece p = pieces[i];
-            if (!(p.done.get())) {
-                out = false;
-                System.out.print(0);
-            } else {
-                System.out.print(1);
-            }
+            out += p.done() ? 1 : 0;
         }
-        System.out.println("\n");
-        if (out) {
-            try ( FileOutputStream file = new FileOutputStream("out")) {
-                    for (Piece p : pieces) {
-                        file.write(p.data);
-                    }
-                } catch (IOException e) {
-                System.out.println("Eror on writing");
+        return out;
+    }
+
+    public void checkDone() {
+        for (Piece piece : pieces) {
+            if (!piece.done()) return;
+        }
+        finish();
+    }
+
+    private synchronized void finish() {
+        try ( FileOutputStream file = new FileOutputStream("out")) {
+            for (Piece p : pieces) {
+                file.write(p.getBytes());
             }
-            synchronized(peers) {
-                for (Peer peer : peers) {
-                    peer.close();
-                }
+        } catch (IOException e) {
+            System.out.println("Eror on writing");
+        }
+        synchronized(peers) {
+            for (Peer peer : peers) {
+                peer.close();
             }
         }
     }
-    
+
     public static void main(String[] args) {
         byte[] b1 = {1, 2, 3};
         byte[] b2 = {3,4, 5};
@@ -330,7 +325,7 @@ public class Torrent {
             }
     }
 }
-    
+
 /** stores information needed to connect to a new Peer */
 class PeerToBe extends Thread {
     private String hostname;

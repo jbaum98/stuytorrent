@@ -9,24 +9,26 @@ import java.util.Random;
  */
 
 public class Piece {
-    public byte[] data;
+    private byte[] data;
     private final byte[] hash;
     private final static SHA1 sha1 = new SHA1();
-    public ArrayList<Chunk> need;
-    public  final AtomicBoolean done;
+    private final Torrent torrent;
+    private ArrayList<Request> need;
+    private Request outstanding;
+    private final AtomicBoolean done;
     public final int index;
 
-    public Piece(byte[] hash, int length, int index) {
-        this.index = index;
-        this.done = new AtomicBoolean(false);
+    public Piece(byte[] hash, int length, int index, Torrent torrent) {
+        this.torrent = torrent;
         this.hash = hash;
         this.data = new byte[length];
-
+        this.index = index;
+        this.done = new AtomicBoolean(false);
         fillNeed();
     }
 
-    private synchronized void fillNeed() {
-        this.need = new ArrayList<Chunk>();
+    private void fillNeed() {
+        this.need = new ArrayList<Request>();
 
         int num_chunks = data.length / 16384;
         int overflow = data.length % 16384;
@@ -37,101 +39,72 @@ public class Piece {
         }
 
         for (int i = 0; i < num_chunks; i++) {
-            need.add(new Chunk(i*16384, (i+1)*16384));
+            need.add(new Request(index, i*16384, 16384));
         }
-        need.add( new Chunk(num_chunks * 16384, data.length) ); 
+        need.add( new Request(index, num_chunks * 16384, overflow) );
     }
-    
-    public synchronized void setData(int begin, byte[] block) {
-        //System.out.println("get some");
-        if (begin % 16384 != 0) {
-            throw new IllegalArgumentException("Max is a bitch/ not a multiple");
-        }
-        int index = findChunk(begin);
-        if (index != -1) {
-            setBytes(begin, block);
-            synchronized (need) {
-                need.remove(index);
+
+    public synchronized void setData(byte[] block) {
+        if (!done()) {
+            setBytes(outstanding.begin, block);
+            need.remove(outstanding);
+            checkDone();
+            if (done()) {
+                outstanding = null;
+            } else {
+                outstanding = need.get((new Random()).nextInt(need.size()));
             }
-	}
+        }
     }
 
     private void setBytes(int begin, byte[] block) {
-        if (!(done.get())) {
+        if (!done()) {
             for (int i = 0; i < block.length; i++) {
                 data[begin + i] = block[i];
             }
         }
     }
 
-    private int findChunk(int begin) {
-        int high = need.size();
-        int low = -1;
-        while(high-low>1){
-            int i = (high + low)/2;
-            Chunk chunk = need.get(i);
-	    int c = begin - chunk.begin;
-	    if(c==0){
-		return i;
-	    }
-	    if(c>0){
-		low=i;
-	    }
-	    if(c<0){
-		high=i;
-	    }
-	}
-	return -1;
+    private void checkDone() {
+        if (need.size() == 0) {
+            if (Arrays.equals(hash, calculateHash()) ) {
+                done.set(true);
+                torrent.checkDone();
+            } else {
+                reset();
+            }
+        }
     }
-    
+
+    public byte[] getBytes() {
+        return getBytes(0, data.length);
+    }
+
     public synchronized byte[] getBytes(int offset, int length) {
         return Arrays.copyOfRange(data, offset, offset+length);
     }
 
-    public synchronized Chunk getRequest() {
-        if (need.size() > 0) {
-            Random r = new Random();
-            return need.get(r.nextInt(need.size()));
-        } else {
-            // WE'RE DONE!!!
-            if (Arrays.equals(calculateHash(), hash)) {
-                //done.set(true);
-                return null;
-            } else {
-                clear(); // ;o
-                done.set(false);
-                System.out.println("OH NO MY EYES "+index);
-                return getRequest();
-            }
-        }
+    public synchronized Request getOutstandingRequest() {
+        return outstanding;
     }
-    
-    private void clear() {
-        fillNeed(); 
+
+    private synchronized void reset() {
+        done.set(false);
+        fillNeed();
         data = new byte[data.length];
     }
-        
+
     private byte[] calculateHash() {
-        return sha1.digest(data);
+        synchronized (data) {
+            return sha1.digest(data);
+        }
     }
 
     public String toString() {
         return "Piece: " + index;
     }
-}
 
-class Chunk {
-    public final int begin;
-    public final int end;
-    public final int length;
-    
-    public Chunk(int begin, int end) {
-        this.begin = begin;
-        this.end = end;
-        this.length = end - begin;
-    }
-
-    public Request toRequest(int index) {
-        return new Request(index, begin, length);
+    public boolean done() {
+        return done.get();
     }
 }

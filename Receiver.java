@@ -23,11 +23,7 @@ public class Receiver extends LoopThread {
                 interrupt();
                 return;
             } else if (len == 0) {
-                try {
-                    messages.put(new KeepAlive());
-                } catch (InterruptedException e) {
-                    interrupt();
-                }
+                messages.put(new KeepAlive());
                 return;
             } else {
                 byte id = in.readByte();
@@ -66,23 +62,14 @@ public class Receiver extends LoopThread {
                     break;
                 case 7:
                     index  = in.readInt();
-                    if (index == 2218) { System.out.println("we got 2218");}
                     begin  = in.readInt();
                     byte[] block  = new byte[len-9];
                     in.readFully(block);
                     message = new PieceMessage(index, begin, block);
                     break;
-                    
                 }
                 if (message != null) {
-                    try {
-                        messages.put(message);
-                    } catch (InterruptedException e) {
-                        interrupt();
-                        System.out.println("closed becuase error onmessage");
-                        peer.close();
-                        return;
-                    }
+                    messages.put(message);
                 }
             }
         } catch (IOException e) {
@@ -90,13 +77,10 @@ public class Receiver extends LoopThread {
             System.out.println("closed becuase error on read");
             peer.close();
             return;
+        } catch (InterruptedException e) {
+            interrupt();
         }
     }
-    
-    protected void cleanup() {
-        if (! peer.socket.isClosed()) { 
-            System.out.println("closed becuase receiver interrupted");
-            peer.close();
-        }
-    }
+
+    protected void cleanup() {}
 }
