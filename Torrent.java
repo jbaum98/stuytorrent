@@ -60,16 +60,38 @@ public class Torrent {
 
         parseMeta(Paths.get(filename));
 
-        // CALCULATE SIZE
         calculateSize();
         fillPieces();
 
-        // SET INFO HASH
         info_hash = sha1.digest(info.bencode());
-        System.out.println(Arrays.toString(info_hash));
-        //////////////////////
 
-        // SET HANDSHAKE
+        setHandshake();
+    }
+
+    private void parseMeta(Path metainfo_file) throws IOException {
+        byte[] bytes = Files.readAllBytes(metainfo_file);
+        String metainfo_string = new String(bytes, charset);
+
+        metainfo = new BencodingMap(metainfo_string);
+        info = (BencodingMap) (metainfo.get("info"));
+    }
+
+    private void calculateSize() {
+        piece_hashes = ((String)info.get("pieces")).getBytes(charset);
+        Long piece_size_long = (Long) info.get("piece length").getInt();
+        num_pieces = piece_hashes.length / 20;
+        size = piece_size * num_pieces;
+    }
+
+    private void fillPieces() {
+        pieces = new Piece[num_pieces];
+        for (int i = 0; i < num_pieces; i++) {
+            byte[] hash = Arrays.copyOfRange(piece_hashes, i*20, (i+1)*20);
+            pieces[i] = new Piece(hash, piece_size);
+        }
+    }
+
+    private void setHandshake() {
         String pstr = "BitTorrent protocol";
         byte[] pstr_bytes = pstr.getBytes(charset);
         byte pstrlen = (byte) pstr_bytes.length;
@@ -85,32 +107,6 @@ public class Torrent {
         for(int i = 0; i<20; i++) {
             handshake[pstrlen+9+i] = info_hash[i];
             handshake[pstrlen+29+i] = peer_id_bytes[i];
-        }
-        //////////////////////
-    }
-
-    private void parseMeta(Path metainfo_file) throws IOException {
-        byte[] bytes = Files.readAllBytes(metainfo_file);
-        String metainfo_string = new String(bytes, charset);
-
-        metainfo = new BencodingMap(metainfo_string);
-        info = (BencodingMap) (metainfo.get("info"));
-    }
-
-    private void calculateSize() {
-        piece_hashes = ((String)info.get("pieces")).getBytes(charset);
-        Long piece_size_long = (Long) info.get("piece length");
-        System.out.println(piece_size_long);
-        piece_size = (int) Math.max(Math.min(Integer.MAX_VALUE, piece_size_long), Integer.MIN_VALUE);
-        num_pieces = piece_hashes.length / 20;
-        size = piece_size * num_pieces;
-    }
-
-    private void fillPieces() {
-        pieces = new Piece[num_pieces];
-        for (int i = 0; i < num_pieces; i++) {
-            byte[] hash = Arrays.copyOfRange(piece_hashes, i*20, (i+1)*20);
-            pieces[i] = new Piece(hash, piece_size);
         }
     }
 
