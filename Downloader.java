@@ -28,7 +28,7 @@ public class Downloader extends LoopThread {
                 }
             }
             try {
-                sleep(10000);
+                sleep(1000/need.size());
             } catch (InterruptedException e) {
                 interrupt();
             }
