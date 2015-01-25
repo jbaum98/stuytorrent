@@ -17,7 +17,7 @@ public abstract class Message {
         System.out.println(Arrays.toString(intToBytes(Integer.MIN_VALUE)));
     }
 }
-/*
+
 class KeepAlive extends Message {
     public byte[] toBytes() {
         byte[] bytes = {0, 0, 0, 0};
@@ -98,25 +98,21 @@ class NotInterested extends Message {
 }
 
 class Have extends Message {
-    public final Binteger piece_index;
+    public final int piece_index;
 
     public Have(int piece_index) {
         this.piece_index = piece_index;
     }
 
-    public Have(byte[] bytes) {
-        this.piece_index = new Binteger(bytes);
-    }
-
     public byte[] toBytes() {
-        byte[] b = piece_index.bytes;
+        byte[] b = intToBytes(piece_index);
         //             |  length  | id |  piece index        |
         byte[] bytes = {0, 0, 0, 1, 4,  b[0], b[1], b[2], b[3] };
         return bytes;
     }
 
     public void action(Peer peer) {
-        peer.have(piece_index.integer);
+        peer.have(piece_index);
     }
 
     public String toString() {
@@ -160,34 +156,31 @@ class BitfieldMessage extends Message {
 }
 
 class Request extends Message {
-    public final Binteger index;
-    public final Binteger begin;
-    public final Binteger length;
-
-    public Request(byte[] index, byte[] begin, byte[] length) {
-        this.index  = new Binteger(index);
-        this.begin  = new Binteger(begin);
-        this.length = new Binteger(length);
-    }
+    public final int index;
+    public final int begin;
+    public final int length;
 
     public Request(int index, int begin, int length) {
-        this.index  = new Binteger(index);
-        this.begin  = new Binteger(begin);
-        this.length = new Binteger(length);
+        this.index  = index;
+        this.begin  = begin;
+        this.length = length;
     }
 
     public byte[] toBytes() {
+        byte[] i = intToBytes(index);
+        byte[] b = intToBytes(begin);
+        byte[] l = intToBytes(length);
         //             |  length   | id |
         byte[] bytes = {0, 0, 0, 13, 6,
-            index.bytes[0],  index.bytes[1],  index.bytes[2],  index.bytes[3],
-            begin.bytes[0],  begin.bytes[1],  begin.bytes[2],  begin.bytes[3],
-            length.bytes[0], length.bytes[1], length.bytes[2], length.bytes[3],
+            i[0],  i[1],  i[2],  i[3],
+            b[0],  b[1],  b[2],  b[3],
+            l[0], l[1], l[2], l[3],
         };
         return bytes;
     }
 
     public void action(Peer peer) {
-        peer.request(index.integer, begin.integer, length.integer);
+        peer.request(index, begin, length);
     }
 
     public String toString() {
@@ -196,39 +189,35 @@ class Request extends Message {
 }
 
 class PieceMessage extends Message {
-    public final Binteger index;
-    public final Binteger begin;
+    public final int index;
+    public final int begin;
     public final byte[] block;
 
-    public PieceMessage(byte[] index, byte[] begin, byte[] block) {
-        this.index = new Binteger(index);
-        this.begin = new Binteger(begin);
-        this.block = block;
-    }
-
     public PieceMessage(int index, int begin, byte[] block) {
-        this.index = new Binteger(index);
-        this.begin = new Binteger(begin);
+        this.index = index;
+        this.begin = begin;
         this.block = block;
     }
 
     public byte[] toBytes() {
-        Binteger len = new Binteger(9+block.length);
+        byte[] len = intToBytes(9+block.length);
+        byte[] i = intToBytes(index);
+        byte[] b = intToBytes(begin);
+
         byte[] bytes = {
-            len.bytes[0],  len.bytes[1],  len.bytes[2],  len.bytes[3],
+            len[0],  len[1],  len[2],  len[3],
             7, // id
-            index.bytes[0],  index.bytes[1],  index.bytes[2],  index.bytes[3],
-            begin.bytes[0],  begin.bytes[1],  begin.bytes[2],  begin.bytes[3],
+            i[0],  i[1],  i[2],  i[3],
+            b[0],  b[1],  b[2],  b[3],
         };
         return bytes;
     }
 
     public void action(Peer peer) {
-        peer.piece(index.integer, begin.integer, block);
+        peer.piece(index, begin, block);
     }
 
     public String toString() {
         return "Request <index " + index + "> <begin: " + begin + ">";
     }
 }
-*/
