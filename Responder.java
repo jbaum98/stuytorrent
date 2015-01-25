@@ -11,12 +11,12 @@ public class Responder extends LoopThread {
         Message message;
         try {
             message = receiver.messages.take();
-            System.out.println(message + " from " + peer);
         } catch (InterruptedException e) {
             interrupt();
             return;
         }
         message.action(peer);
+        peer.keepalive();
     }
 
     protected void cleanup() {

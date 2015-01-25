@@ -14,8 +14,10 @@ public class Piece {
     private final static SHA1 sha1 = new SHA1();
     private ArrayList<Chunk> need;
     public  final AtomicBoolean done;
+    public final int index;
 
-    public Piece(byte[] hash, int length) {
+    public Piece(byte[] hash, int length, int index) {
+        this.index = index;
         this.done = new AtomicBoolean(false);
         this.hash = hash;
         this.data = new byte[length];
@@ -41,7 +43,7 @@ public class Piece {
     }
     
     public synchronized void setData(int begin, byte[] block) {
-        System.out.println("get some");
+        //System.out.println("get some");
         if (begin % 16384 != 0) {
             throw new IllegalArgumentException("Max is a bitch/ not a multiple");
         }

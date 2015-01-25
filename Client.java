@@ -21,14 +21,13 @@ public class Client extends LoopThread {
      * listens for new connections
      * @see LoopThread
      */
-    public void task() throws IOException {
-        Socket peerSocket = null;
+    public void task() {
         try {
-            peerSocket = listeningSocket.accept(); // waits here until something tries to connect
+            Socket peerSocket = listeningSocket.accept(); // waits here until something tries to connect
+            if (peerSocket != null) { addPeer(peerSocket); }
         } catch (IOException e) {
             throw new RuntimeException("Error accepting client connection", e);
         }
-        if (peerSocket != null) { addPeer(peerSocket); }
     }
 
     /** Opens the listening port */
@@ -54,7 +53,7 @@ public class Client extends LoopThread {
      * closes the {@link listeningPort}
      * @see LoopThread
      */
-    public void cleanup(){
+    public void cleanup() {
         try {
             listeningSocket.close();
             // TODO close torrents

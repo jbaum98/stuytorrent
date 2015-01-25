@@ -41,6 +41,7 @@ public class Receiver extends LoopThread {
                     break;
                 case 2:
                     message = new Interested();
+                    System.out.println("interested! " + peer);
                     break;
                 case 3:
                     message = new NotInterested();
@@ -52,6 +53,7 @@ public class Receiver extends LoopThread {
                 case 5:
                     byte[] bitfield = new byte[len-1];
                     in.readFully(bitfield);
+                    System.out.println(Arrays.toString(bitfield));
                     message = new BitfieldMessage(bitfield);
                     break;
                 case 6:
@@ -59,6 +61,7 @@ public class Receiver extends LoopThread {
                     begin  = in.readInt();
                     length = in.readInt();
                     message = new Request(index, begin, length);
+                    System.out.println("request from " + peer);
                     break;
                 case 7:
                     index  = in.readInt();

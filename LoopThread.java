@@ -8,23 +8,19 @@ abstract public class LoopThread extends Thread {
     /**
      * will be repeated until the thread is interrupted
      */
-    protected abstract void task() throws Exception;
+    protected abstract void task();
 
     /** @see Thread#run */
     public void run() {
-        try {
-            while (!isInterrupted()) {
-                task();
-            }
-            synchronized (this) {
-                cleanup();
-            }
-        } catch (Exception e) {
-            e.printStackTrace(System.out);
+        while (!isInterrupted()) {
+            task();
+        }
+        synchronized (this) {
+            cleanup();
         }
         interrupt();
     }
 
     /** will be run after the {@link LoopThread} is Interrupted */
-    abstract protected void cleanup() throws Exception;
+    abstract protected void cleanup();
 }

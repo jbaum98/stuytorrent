@@ -20,7 +20,7 @@ public class Peer implements Closeable, AutoCloseable {
     private Responder           responder;
     private Downloader          downloader;
 
-    private Torrent torrent;
+    public Torrent torrent;
 
     private String id;
     private byte[] info_hash;
@@ -37,6 +37,7 @@ public class Peer implements Closeable, AutoCloseable {
     private AtomicBoolean am_interested   = new AtomicBoolean(false);
 
     public Bitfield bitfield;
+    private AtomicBoolean closed = new AtomicBoolean(false);
     /**
      * called when we are initiating the connection
      * @param socket  the {@link java.net.Socket} to the Peer
@@ -172,7 +173,7 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
     public void send(Message message) {
-        System.out.println("Sent " + this + " " + message);
+        //System.out.println("Sent " + this + " " + message);
         send(message.toBytes());
     }
 
@@ -218,7 +219,8 @@ public class Peer implements Closeable, AutoCloseable {
 
     /** called when {@link Peer} recieves a request message */
     public void request(int index, int begin, int length) {
-        send(torrent.getChunk(index, begin, length));
+        System.out.println("responding to a Reqeust with a Piece");
+        send(new PieceMessage(index, begin, torrent.getChunk(index, begin, length)));
     }
 
     /** called when {@link Peer} recieves a piece message */
@@ -265,18 +267,24 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
     /** closes a {@link Peer} by closing the socket and removing itself from it's {@link Torrent}'s {@link Torrent#peers} */
-    public synchronized void close() {
+    public void close() {
         System.out.println("CLOSED "+this);
-        try {
-            socket.close();
-            death.interrupt();
-            if (receiver != null) receiver.interrupt();
-            if (responder != null) responder.interrupt();
-            if (downloader != null) downloader.interrupt();
-        } catch (IOException e) {
-            e.printStackTrace(System.out);
+        if (closed.get()) {
+            return;
+        } else {
+            synchronized (this) {
+                try {
+                    closed.set(true);
+                    socket.close();
+                    death.interrupt();
+                    if (receiver != null) receiver.interrupt();
+                    if (responder != null) responder.interrupt();
+                    if (downloader != null) downloader.interrupt();
+                } catch (IOException e) {
+                    e.printStackTrace(System.out);
+                }
+            }
         }
-        receiver.interrupt();
         if (torrent != null) {
             torrent.removePeer(this);
         }

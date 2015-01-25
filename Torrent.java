@@ -27,7 +27,7 @@ public class Torrent {
     private final SHA1 sha1 = new SHA1();
 
     private final Client client;
-    private final HashSet<Peer> peers;
+    public final HashSet<Peer> peers;
 
     public final String peer_id;
 
@@ -66,6 +66,7 @@ public class Torrent {
         info_hash = sha1.digest(info.bencode());
 
         setHandshake();
+        start();
     }
 
     private void parseMeta(Path metainfo_file) throws IOException {
@@ -80,15 +81,17 @@ public class Torrent {
         piece_hashes = ((String)info.get("pieces")).getBytes(charset);
         piece_size = ((Long) info.get("piece length")).intValue();
         num_pieces = piece_hashes.length / 20;
-        size = piece_size * num_pieces;
+        size = (long) info.get("length");
     }
 
     private void fillPieces() {
         pieces = new Piece[num_pieces];
-        for (int i = 0; i < num_pieces; i++) {
+        for (int i = 0; i < num_pieces - 1; i++) {
             byte[] hash = Arrays.copyOfRange(piece_hashes, i*20, (i+1)*20);
-            pieces[i] = new Piece(hash, piece_size);
+            pieces[i] = new Piece(hash, piece_size,i);
         }
+        int overflow = (int) ((piece_size * num_pieces)-size);
+        pieces[pieces.length - 1 ] = new Piece(Arrays.copyOfRange(piece_hashes, (num_pieces - 1)*20, num_pieces*20), overflow, num_pieces-1);
     }
 
     private void setHandshake() {
@@ -266,15 +269,32 @@ public class Torrent {
     }
 
     public byte[] getChunk(int index, int begin, int length) {
-        synchronized (pieces) {
-            return pieces[index].getBytes(begin, length);
-        }
+        return pieces[index].getBytes(begin, length);
     }
 
     public void addChunk(int index, int begin, byte[] block) {
-        synchronized (pieces) {
-            pieces[index].setData(begin, block);
+        pieces[index].setData(begin, block);
+    }
+    
+    public void done(Piece piece) {
+        if (piece != null) {
+            for (Peer recip : peers) {
+                System.out.println("sending ahve to " + recip);
+                recip.send(new Have(piece.index));
+            }
         }
+        boolean out = true;
+        for (int i = 0; i < pieces.length; i++) {
+            Piece p = pieces[i];
+            if (!(p.done.get())) {
+                out = false;
+                System.out.print(0);
+            } else {
+                System.out.print(1);
+            }
+        }
+        System.out.println("\n");
+        //System.out.println("We're done!");
     }
 }
 

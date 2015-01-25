@@ -2,7 +2,7 @@ import java.util.Arrays;
 
 public abstract class Message {
     public abstract byte[] toBytes();
-    //public abstract void action(Peer peer);
+    public abstract void action(Peer peer);
     public abstract String toString();
 
     protected static byte[] intToBytes(int integer) {
@@ -24,9 +24,7 @@ class KeepAlive extends Message {
         return bytes;
     }
 
-    public void action(Peer peer) {
-        peer.keepalive();
-    };
+    public void action(Peer peer) {};
 
     public String toString() {
         return "KeepAlive";
@@ -107,7 +105,7 @@ class Have extends Message {
     public byte[] toBytes() {
         byte[] b = intToBytes(piece_index);
         //             |  length  | id |  piece index        |
-        byte[] bytes = {0, 0, 0, 1, 4,  b[0], b[1], b[2], b[3] };
+        byte[] bytes = {0, 0, 0, 5, 4,  b[0], b[1], b[2], b[3] };
         return bytes;
     }
 
@@ -128,8 +126,10 @@ class BitfieldMessage extends Message {
     }
 
     public byte[] toBytes() {
+        int length = 1 + bitfield.length;
+        byte[] l = intToBytes(length);
         //             |  length  | id |
-        byte[] start = {0, 0, 0, 1, 5};
+        byte[] start = {l[0], l[1], l[2], l[3], 5};
         byte[] bytes = new byte[5+bitfield.length];
 
         // copy start
