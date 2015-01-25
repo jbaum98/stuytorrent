@@ -25,6 +25,7 @@ public class Piece {
         this.index = index;
         this.done = new AtomicBoolean(false);
         fillNeed();
+        outstanding = need.get((new Random()).nextInt(need.size()));
     }
 
     private void fillNeed() {

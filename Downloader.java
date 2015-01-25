@@ -22,12 +22,13 @@ public class Downloader extends LoopThread {
             for (int i = 0; i < 10; i++) {
                 Piece p = need.get(r.nextInt(need.size()));
                 Request request = p.getOutstandingRequest();
+                // System.out.println("want to send " + request);
                 if (request != null) {
                     peer.send(request);
                 }
             }
             try {
-                sleep(10000/need.size());
+                sleep(10000);
             } catch (InterruptedException e) {
                 interrupt();
             }

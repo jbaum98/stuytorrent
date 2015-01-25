@@ -171,21 +171,11 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
     public void send(String message) {
-        System.out.println("Sending " + message + " to " +this);
+        // System.out.println("Sending " + message + " to " +this);
         send(message.getBytes());
     }
 
     public void send(Message message) {
-        //System.out.println("Sent " + this + " " + message);
-        if (message instanceof Request) {
-            if (((Request)message).index == 2216 ) {
-                //   System.out.println("tried a " +2216 + " with " + this);
-            } else if (((Request)message).index == 2217 ) {
-                //System.out.println("tried a " +2217 + " with " + this);
-            } else if (((Request)message).index == 2218 ) {
-                System.out.println("tried a " +2218 + " with " + this);
-            }
-        }
         send(message.toBytes());
     }
 
@@ -231,7 +221,7 @@ public class Peer implements Closeable, AutoCloseable {
 
     /** called when {@link Peer} recieves a request message */
     public void request(int index, int begin, int length) {
-        System.out.println("responding to a Reqeust with a Piece");
+        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\nresponding to a Reqeust with a Piece");
         send(new PieceMessage(index, begin, torrent.getChunk(index, begin, length)));
     }
 

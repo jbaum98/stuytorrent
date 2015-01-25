@@ -16,6 +16,9 @@ public class Responder extends LoopThread {
             return;
         }
         peer.keepalive();
+        if (message instanceof Request) {
+            System.out.println("received" + message + " from " + peer);
+        }
         message.action(peer);
     }
 

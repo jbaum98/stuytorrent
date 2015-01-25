@@ -218,6 +218,6 @@ class PieceMessage extends Message {
     }
 
     public String toString() {
-        return "Request <index " + index + "> <begin: " + begin + ">";
+        return "PieceMessage <index " + index + "> <begin: " + begin + ">";
     }
 }

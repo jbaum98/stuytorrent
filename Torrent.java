@@ -278,6 +278,8 @@ public class Torrent {
         Request outstanding = piece.getOutstandingRequest();
         if (outstanding.begin == begin && outstanding.length == block.length) {
             piece.setData(block);
+        } else {
+            // System.out.println("rejected index " + index + " begin " + begin + " length " + block.length + " for " + outstanding );
         }
     }
 
