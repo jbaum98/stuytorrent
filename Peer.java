@@ -1,7 +1,7 @@
 import java.net.Socket;
 import java.io.IOException;
 import java.io.Closeable;
-import java.io.InputStream;
+import java.io.DataInputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
@@ -14,7 +14,7 @@ import java.util.Arrays;
 public class Peer implements Closeable, AutoCloseable {
     private static final Charset charset = StandardCharsets.ISO_8859_1;
     public  Socket socket;
-    private InputStream in;
+    private DataInputStream in;
     private Receiver            receiver;
     private OutputStream        out;
     private Responder           responder;
@@ -100,7 +100,7 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
     private void setStreams() throws IOException {
-        in = socket.getInputStream();
+        in = new DataInputStream(socket.getInputStream());
         out = socket.getOutputStream();
         receiver = new Receiver(this, in);
         responder = new Responder(receiver, this);
@@ -110,7 +110,6 @@ public class Peer implements Closeable, AutoCloseable {
      * <b>{@link torrent}</b> must be set
      */
     public void sendHandshake() throws IOException {
-        System.out.println(Arrays.toString(torrent.handshake));
         send(torrent.handshake);
     }
 
@@ -173,6 +172,7 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
     public void send(Message message) {
+        System.out.println("Sent " + this + " " + message);
         send(message.toBytes());
     }
 
@@ -238,7 +238,7 @@ public class Peer implements Closeable, AutoCloseable {
 
     public void interested() {
         am_interested.set(true);
-        send(new Unchoke());
+        send(new Interested());
     }
 
     public void notInterested() {

@@ -2,10 +2,22 @@ import java.util.Arrays;
 
 public abstract class Message {
     public abstract byte[] toBytes();
-    public abstract void action(Peer peer);
+    //public abstract void action(Peer peer);
     public abstract String toString();
-}
 
+    protected static byte[] intToBytes(int integer) {
+        byte[] out = new byte[4];
+        for (int in = integer, i = out.length-1; i >= 0; in >>>= 8, i--) {
+            out[i] = (byte) (in & 0xFF);
+        }
+        return out;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(Arrays.toString(intToBytes(Integer.MIN_VALUE)));
+    }
+}
+/*
 class KeepAlive extends Message {
     public byte[] toBytes() {
         byte[] bytes = {0, 0, 0, 0};
@@ -88,8 +100,8 @@ class NotInterested extends Message {
 class Have extends Message {
     public final Binteger piece_index;
 
-    public Have(int integer) {
-        this.piece_index = new Binteger(integer);
+    public Have(int piece_index) {
+        this.piece_index = piece_index;
     }
 
     public Have(byte[] bytes) {
@@ -219,3 +231,4 @@ class PieceMessage extends Message {
         return "Request <index " + index + "> <begin: " + begin + ">";
     }
 }
+*/

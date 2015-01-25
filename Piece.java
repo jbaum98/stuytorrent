@@ -41,6 +41,7 @@ public class Piece {
     }
     
     public synchronized void setData(int begin, byte[] block) {
+        System.out.println("get some");
         if (begin % 16384 != 0) {
             throw new IllegalArgumentException("Max is a bitch/ not a multiple");
         }
@@ -119,7 +120,7 @@ class Chunk {
     public Chunk(int begin, int end) {
         this.begin = begin;
         this.end = end;
-        this.length = begin - end;
+        this.length = end - begin;
     }
 
     public Request toRequest(int index) {

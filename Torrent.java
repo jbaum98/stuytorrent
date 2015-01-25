@@ -78,7 +78,7 @@ public class Torrent {
 
     private void calculateSize() {
         piece_hashes = ((String)info.get("pieces")).getBytes(charset);
-        Long piece_size_long = (Long) info.get("piece length").getInt();
+        piece_size = ((Long) info.get("piece length")).intValue();
         num_pieces = piece_hashes.length / 20;
         size = piece_size * num_pieces;
     }
@@ -191,7 +191,7 @@ public class Torrent {
         for (int i = 0; i < unsigneds.length; i+=6) {
             String hostname = unsigneds[i]+"."+unsigneds[i+1]+"."+unsigneds[i+2]+"."+unsigneds[i+3]; // construct IP address
             int port = unsigneds[i+4]*256+unsigneds[i+5]; // port is stored as 2 bytes, need to be concatenated
-            out[i/6] = new PeerToBe(hostname, port);
+            out[i/6] = new PeerToBe(hostname, port, this);
         }
         return out;
     }
@@ -249,10 +249,7 @@ public class Torrent {
     }
 
     private void connect(PeerToBe url) throws IOException {
-        System.out.println("creating socket at "+url);
-        Socket socket = new Socket(url.hostname, url.port);
-        System.out.println("starting peer");
-        Peer peer = new Peer(socket, this);
+        url.start();
     }
 
 
@@ -282,13 +279,26 @@ public class Torrent {
 }
 
 /** stores information needed to connect to a new Peer */
-class PeerToBe {
-    public String hostname;
-    public int port;
+class PeerToBe extends Thread {
+    private String hostname;
+    private int port;
+    private Torrent torrent; 
 
-    public PeerToBe(String hostname, int port) {
+    public PeerToBe(String hostname, int port, Torrent torrent) {
         this.hostname = hostname;
         this.port = port;
+        this.torrent = torrent;
+    }
+
+    public void run() {
+        System.out.println("creating socket at "+this);
+        try {
+            Socket socket = new Socket(hostname, port);
+            System.out.println("starting peer");
+            Peer peer = new Peer(socket, torrent);
+        } catch (IOException e) {
+            e.printStackTrace(System.out);
+        }
     }
 
     public String toString() {
