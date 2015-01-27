@@ -75,6 +75,22 @@ public class Interval {
         boundaries.add(n);
     }
 
+    public Tuple getAbsentInterval(int max_size) {
+        for (Boundary b : boundaries) {
+            if (b.is(Status.ABSENT)) {
+                Boundary below = boundaries.lower(b);
+                int lo;
+                if (b.location - below.location > max_size) {
+                    lo = b.location - max_size;
+                } else {
+                    lo = below.location;
+                }
+                return new Tuple(lo, b.location);
+            }
+        }
+        return null;
+    }
+
     public String toString() {
         String out = new String("<");
         for (Boundary b : boundaries) {
@@ -127,10 +143,6 @@ class Boundary implements Comparable<Boundary> {
 
     public Status status() {
         return status.get();
-    }
-
-    public void set(Status status) {
-        this.status.set(status);
     }
 
     public boolean is(Status status) {
