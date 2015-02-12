@@ -4,21 +4,25 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Interval {
     private TreeSet<Boundary> boundaries;
 
-    public Interval(int size) {
+    public Interval(int length) {
+        this(length,Status.ABSENT);
+    }
+
+    public Interval(int length, Status defaultStatus) {
         boundaries = new TreeSet<Boundary>();
-        boundaries.add(new Boundary(size));
+        boundaries.add(new Boundary(length, defaultStatus));
     }
 
-    public int size() {
-        return last().location;
+    public int length() {
+        return lastBoundary().location;
     }
 
-    private Boundary last() {
+    private Boundary lastBoundary() {
         return boundaries.last();
     }
 
     public Status status(int location) {
-        return ceiling(location).status();
+        return higher(location).status();
     }
 
     public boolean is(int location, Status status) {
@@ -46,33 +50,68 @@ public class Interval {
     }
 
     public void set(int lo, int hi, Status status) {
-        if (lo == 0 || (!is(lo, status) && (!is(hi, status)) || hasBoundaryAt(hi)) ) {
-            addBoundary(lo);
-            addBoundary(hi, status);
-            Boundary above;
-            while ((above = higher(lo)).location < hi) {
+        if ( 0 > lo || lo > hi || hi >= length() ) return; // sanity checks
+        Boundary low = addOrFetchBelow(lo, status);
+        Boundary high = addOrFetchAbove(hi+1, status);
+        clearBetween(low, high);
+    }
+
+    private Boundary addOrFetchAbove(int location, Status status) {
+        Boundary above = ceiling(location);
+        if (above.is(status)) {
+            return above;
+        } else if (above.location == location) {
+            Boundary next_above = boundaries.higher(above);
+            if (next_above != null && next_above.is(status)) {
                 boundaries.remove(above);
+                return next_above;
+            } else {
+                above.setStatus(status);
+                return above;
             }
-        } else if (is(lo, status)) {
-            Boundary below = lower(lo);
-            int new_lo = below == null ? 0 : below.location;
-            set(new_lo, hi, status);
-        } else if (is(hi, status)) {
-            Boundary above = ceiling(hi);
-            int new_hi = above.location;
-            set(lo, new_hi, status);
+        } else {
+            return addBoundary(location, status);
         }
     }
 
-    private void addBoundary(int location) {
-        addBoundary(location, status(location));
+    private Boundary addOrFetchBelow(int location, Status status) {
+        if (status(location) == status) {
+            return floor(location); // might be null
+        } else {
+            return addBoundary(location);
+        }
     }
 
-    private void addBoundary(int location, Status status) {
-        if (location == 0) return;
-        Boundary n = new Boundary(location, status);
-        boundaries.remove(n);
-        boundaries.add(n);
+    private void clearBetween(Boundary low, Boundary high) {
+        Boundary above;
+        while ( (above = above(low)).compareTo(high) < 0 ) {
+            boundaries.remove(above);
+        }
+    }
+
+    private Boundary above(Boundary b) {
+        return boundaries.higher(b);
+    }
+
+    /**
+     * add a boundary at location of the same status as location's current status
+     * @param location should be greater than 0
+     */
+    private Boundary addBoundary(int location) {
+        Boundary b = new Boundary(location, status(location));
+        boundaries.add(b);
+        return b;
+    }
+
+    /**
+     * @param location should be greater than 0
+     * @param status   the {@link Status} of the new {@link Boundary}
+     */
+    private Boundary addBoundary(int location, Status status) {
+        Boundary b = new Boundary(location, status);
+        boundaries.remove(b); // make sure status is overwritten
+        boundaries.add(b);
+        return b;
     }
 
     public Tuple getAbsentInterval(int max_size) {
@@ -93,9 +132,8 @@ public class Interval {
 
     public String toString() {
         String out = new String("<");
-        for (Boundary b : boundaries) {
-            for (int i = 0; i < 5; i++) out += b.status().c;
-            out += b;
+        for (int i = 0; i < length(); i++) {
+            out += status(i).c;
         }
         return out+">";
     }
@@ -123,7 +161,7 @@ public class Interval {
         i.set(15, 60, Status.PENDING);
         i.set(40, 60, Status.ABSENT);
         System.out.println(i);
-        i.set(0, 100, Status.PRESENT);
+        i.set(0, 99, Status.PRESENT);
         System.out.println(i);
     }
 }
@@ -145,6 +183,10 @@ class Boundary implements Comparable<Boundary> {
         return status.get();
     }
 
+    public void setStatus(Status newStatus) {
+        status.set(newStatus);
+    }
+
     public boolean is(Status status) {
         return this.status() == status;
     }
@@ -159,6 +201,10 @@ class Boundary implements Comparable<Boundary> {
 
     public int hashCode() {
         return location;
+    }
+
+    public boolean strictEquals(Boundary other) {
+        return this.location == other.location && this.status == other.status;
     }
 
     public String toString() {
