@@ -1,16 +1,19 @@
 import java.util.ArrayList;
+import java.util.HashMap;
+
 /**
  * parses Bencoded data
  * @see <a href="https://wiki.theory.org/BitTorrentSpecification#Bencoding">Bit Torrent Specification</a>
  */
-public class BencodingParser {
+public class BencodingParser implements Parser {
     private String data;
     /** current position */
     private int counter;
 
-    public BencodingParser(String data) {
-        this.data = data;
+    public HashMap parse(String s) {
+        this.data = s;
         this.counter = 0;
+        return d();
     }
 
     private boolean isDigit(char c) {
@@ -22,7 +25,7 @@ public class BencodingParser {
      * letter i used for integer, but we sometimes need to parse ints &gt; 2^31
      * so we use longs
      */
-    public long i() {
+    private long i() {
         int start = counter;
         int end = data.indexOf('e', counter);
         counter = end + 1;
@@ -32,7 +35,7 @@ public class BencodingParser {
     /**
      * parse a string
      */
-    public String s() {
+    private String s() {
         int colonIndex = data.indexOf(':', counter);
         int length = Integer.parseInt(data.substring(counter,colonIndex));
         int end = colonIndex + length + 1; // one after last char
@@ -67,7 +70,7 @@ public class BencodingParser {
     /**
      * parse a list
      */
-    public ArrayList l() {
+    private ArrayList l() {
         counter++; //get past l
         return many();
     }
@@ -75,13 +78,17 @@ public class BencodingParser {
     /**
      * parse a dictionary
      */
-    public BencodingMap d() {
+    private HashMap d() {
         counter++; //get past d
         ArrayList parsed = many(); // get a list of elements
-        BencodingMap out = new BencodingMap();
+        HashMap out = new HashMap();
         for (int i = 0; i < parsed.size(); i+=2) {
             out.put(parsed.get(i), parsed.get(i+1)); // every other element is a key or a value
         }
         return out;
     }
+}
+
+interface Parser {
+    public HashMap parse(String s);
 }
