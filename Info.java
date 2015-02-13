@@ -1,6 +1,4 @@
 import java.util.HashMap;
-import java.nio.charset.StandardCharsets;
-import java.nio.charset.Charset;
 
 public interface Info {
     public int piece_length();
@@ -10,7 +8,6 @@ public interface Info {
 }
 
 class InfoSingle implements Info {
-    private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final int piece_length;
     private final byte[]    pieces;
     private final String    name;
@@ -18,7 +15,7 @@ class InfoSingle implements Info {
 
     public InfoSingle(HashMap map) {
         piece_length = (int) map.get("piece_length");
-        pieces = ((String) map.get("pieces")).getBytes(CHARSET);
+        pieces = ((String) map.get("pieces")).getBytes(Globals.CHARSET);
         name = (String) map.get("name");
         length = (int) map.get("length");
     }
