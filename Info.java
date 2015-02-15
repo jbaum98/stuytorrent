@@ -1,26 +1,31 @@
 import java.util.HashMap;
+import java.util.Arrays;
 
-public interface Info {
-    public int piece_length();
-    public byte[]    pieces();
-    public String    name();
-    public int       length();
+public abstract class Info {
+    public abstract long piece_length();
+    public abstract byte[]    pieces();
+    public abstract String    name();
+    public abstract long       length();
+
+    public byte[] hash(int piece_index) {
+        return Arrays.copyOfRange(pieces(), piece_index*20, (piece_index-1)*20);
+    }
 }
 
-class InfoSingle implements Info {
-    private final int piece_length;
+class InfoSingle extends Info {
+    private final long piece_length;
     private final byte[]    pieces;
     private final String    name;
-    private final int       length;
+    private final long       length;
 
-    public InfoSingle(HashMap map) {
-        piece_length = (int) map.get("piece_length");
-        pieces = ((String) map.get("pieces")).getBytes(Globals.CHARSET);
-        name = (String) map.get("name");
-        length = (int) map.get("length");
+    public InfoSingle(HashMap<String, BencodingObj> map) {
+        piece_length = (long) map.get("piece length").value;
+        pieces = ((String) map.get("pieces").value).getBytes(Globals.CHARSET);
+        name = (String) map.get("name").value;
+        length = (long) map.get("length").value;
     }
 
-    public int piece_length() {
+    public long piece_length() {
         return piece_length;
     }
 
@@ -32,7 +37,7 @@ class InfoSingle implements Info {
         return name;
     }
 
-    public int length() {
+    public long length() {
         return length;
     }
 }

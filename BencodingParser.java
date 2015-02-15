@@ -93,11 +93,11 @@ public class BencodingParser {
         index++; //get past d
         ArrayList<BencodingObj> me = new ArrayList<BencodingObj>();
         parse(me);
-        HashMap<BencodingObj<String>, BencodingObj> map = new HashMap<BencodingObj<String>, BencodingObj>();
+        HashMap<String, BencodingObj> map = new HashMap<String, BencodingObj>();
         for (int i = 0; i + 1 < me.size(); i+=2) {
-            map.put(me.get(i), me.get(i+1)); // every other element is a key or a value
+            map.put((String) me.get(i).value, me.get(i+1)); // every other element is a key or a value
         }
-        out.add(new BencodingObj<HashMap<BencodingObj<String>, BencodingObj>>(map,data.substring(start,index+1)));
+        out.add(new BencodingObj<HashMap<String, BencodingObj>>(map,data.substring(start,index+1)));
         index++; //get past e
     }
 
