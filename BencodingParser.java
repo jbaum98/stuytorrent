@@ -5,7 +5,7 @@ import java.util.HashMap;
  * parses Bencoded data
  * @see <a href="https://wiki.theory.org/BitTorrentSpecification#Bencoding">Bit Torrent Specification</a>
  */
-public class BencodingParser implements Parser {
+public class BencodingParser {
     private String data;
     /** current position */
     private int counter;
@@ -89,6 +89,12 @@ public class BencodingParser implements Parser {
     }
 }
 
-interface Parser {
-    public HashMap parse(String s);
+class BencodingObj<T> {
+    public final T      value;
+    public final String original;
+
+    public BencodingObj(T value, String original) {
+        this.value = value;
+        this.original = original;
+    }
 }
