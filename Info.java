@@ -16,7 +16,7 @@ class InfoSingle extends Info {
     private final long piece_length;
     private final byte[]    pieces;
     private final String    name;
-    private final long       length;
+    private final long      length;
 
     public InfoSingle(HashMap<String, BencodingObj> map) {
         piece_length = (long) map.get("piece length").value;
