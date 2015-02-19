@@ -103,9 +103,7 @@ public class BencodingParser {
 
     public static void main(String[] args) {
         BencodingParser bp = new BencodingParser();
-        BencodingObj x = bp.parse("d4:thislllli3eeeeee");
-        System.out.println(x);
-        System.out.println(x.original);
+        System.out.println(bp.parse(args[0]));
     }
 }
 
