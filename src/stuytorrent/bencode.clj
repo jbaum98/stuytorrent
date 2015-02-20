@@ -14,15 +14,15 @@
 (defn parse
   "recursively parse an entire bencoded string"
   ([s]
-   (let [out (fnext (parse s [])) ]
+   (let [out (fnext (trampoline parse s [])) ]
      (if (= (count out) 1)
        (first out)
        out)))
   ([s soFar]
-   (let [fun (chr->parser (first s))]
-     (if fun
-       (apply parse (fun s soFar))
-       [s soFar]))))
+     (let [fun (chr->parser (first s))]
+       (if fun
+         #(apply parse (fun s soFar))
+         [s soFar]))))
 
 (defn i
   "parse integer"
@@ -46,7 +46,7 @@
 (defn l
   "parse list"
   [s soFar]
-  (let [[newStringWithE contents] (parse (subs s 1) [])
+  (let [[newStringWithE contents] (trampoline parse (subs s 1) [])
         newString (subs newStringWithE 1)
         newSoFar (conj soFar contents) ]
     [newString newSoFar]))
@@ -54,7 +54,17 @@
 (defn d
   "parse dictionary"
   [s soFar]
-  (let [[newStringWithE contents] (parse (subs s 1) [])
+  (let [[newStringWithE contents] (trampoline parse (subs s 1) [])
         newString (subs newStringWithE 1)
         newSoFar (conj soFar (apply hash-map contents)) ]
     [newString newSoFar]))
+
+(defn mult [s n]
+  (apply str (repeat n s)))
+
+
+
+
+
+
+
