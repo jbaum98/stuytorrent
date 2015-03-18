@@ -1,8 +1,8 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.Iterator;
 import java.util.Formatter;
-import java.nio.charset.StandardCharsets;
-import java.nio.charset.Charset;
 import java.net.URLEncoder;
 import java.io.UnsupportedEncodingException;
 
@@ -12,7 +12,6 @@ import java.io.UnsupportedEncodingException;
  */
 
 public class QueryMap extends HashMap<String,String> {
-    private static final Charset charset = StandardCharsets.ISO_8859_1;
     private static final long serialVersionUID = 1567891877869114093L;
 
     public String put(String key, String value) {
@@ -31,6 +30,20 @@ public class QueryMap extends HashMap<String,String> {
         return super.put(encode(key), encode(Long.toString(value)));
     }
 
+    public String toString() {
+        String out = new String();
+        Set<Map.Entry<String,String>> queries = entrySet();
+        Iterator<Map.Entry<String,String>> i = queries.iterator();
+        while(i.hasNext()) {
+            Map.Entry<String, String> query = i.next();
+            out += query.getKey() + "=" + query.getValue();
+            if (i.hasNext()) { // not the last one
+                out += "&";
+            }
+        }
+        return out;
+    }
+
     private String encode(byte[] bytes) {
         Formatter formatter = new Formatter();
         for (byte b : bytes) {
@@ -41,9 +54,9 @@ public class QueryMap extends HashMap<String,String> {
 
     private String encode(String s) {
         try {
-            return URLEncoder.encode(s, charset.name());
+            return URLEncoder.encode(s, Globals.CHARSET.name());
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Somehow you lack "+charset.name()+" even though I already checked you had it... this should never happen",e);
+            throw new RuntimeException("Somehow you lack "+Globals.CHARSET.name()+" even though I already checked you had it... this should never happen",e);
         }
     }
 }
