@@ -1,4 +1,4 @@
-package peer;
+package stuytorrent.peer;
 
 import java.util.ArrayList;
 import java.util.Random;

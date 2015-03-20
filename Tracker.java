@@ -1,3 +1,5 @@
+package stuytorrent;
+
 public interface Tracker {
     public boolean         isStarted();
     public TrackerResponse start(long uploaded, long downloaded, long left);

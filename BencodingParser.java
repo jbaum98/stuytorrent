@@ -1,3 +1,5 @@
+package stuytorrent;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 

@@ -1,3 +1,5 @@
+package stuytorrent;
+
 import java.util.HashMap;
 import java.net.URL;
 import java.net.MalformedURLException;

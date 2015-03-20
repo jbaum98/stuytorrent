@@ -1,6 +1,6 @@
-package peer;
+package stuytorrent.peer;
 
-public class Responder extends LoopThread {
+public class Responder {
     private final Receiver receiver;
     private final Peer     peer;
 

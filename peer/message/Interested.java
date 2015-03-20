@@ -1,4 +1,4 @@
-package peer.message;
+package stuytorrent.peer.message;
 
 public class Interested extends Message {
     public byte[] toBytes() {

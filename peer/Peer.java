@@ -1,4 +1,4 @@
-package peer;
+package stuytorrent.peer;
 
 import java.net.Socket;
 import java.io.IOException;
@@ -8,7 +8,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Arrays;
+
 import stuytorrent.Bitfield;
+//import stuytorrent.Torrent;
+//import stuytorrent.TorrentList;
+import stuytorrent.peer.message.*;
 
 /**
  * represents another torrent Client to which we are connected
@@ -17,17 +21,17 @@ public class Peer {
     private static final Charset charset = StandardCharsets.ISO_8859_1;
     public  Socket socket;
     private DataInputStream in;
-    private Receiver        receiver;
+    //private Receiver        receiver;
     private Sender          sender;
-    private Responder       responder;
-    private Downloader      downloader;
+    //private Responder       responder;
+    //private Downloader      downloader;
 
-    public Torrent torrent = null;
+    //public Torrent torrent = null;
 
     private String id;
     private byte[] info_hash;
 
-    private Death death;
+    //private Death death;
 
     /** if HE is chocking ME */
     private AtomicBoolean peer_choking    = new AtomicBoolean(true);
@@ -45,11 +49,11 @@ public class Peer {
      * @param socket  the {@link java.net.Socket} to the Peer
      * @param torrent the {@link Torrent} for which we want to download make a connection
      */
-    public Peer(Socket socket) {
+    public Peer(Socket socket) throws IOException {
         //startDeath();
         this.socket = socket;
         setStreams();
-        this.torrent = torrent;
+        //this.torrent = torrent;
 
         sendHandshake();
         System.out.println("sent handshake");
@@ -59,14 +63,14 @@ public class Peer {
 
         if (!verify()) {
             System.out.println("closed because unverified");
-            close();
+            //close();
             return;
         }
         System.out.println("verified");
 
         setBitfield();
-        setDownloader();
-        torrent.addPeer(this);
+        //setDownloader();
+        //torrent.addPeer(this);
         System.out.println("starting");
         startThreads();
         System.out.println("started");
@@ -77,52 +81,43 @@ public class Peer {
      * @param socket   the {@link java.net.Socket} to the other client
      * @param torrents the {@link Client#torrents} so we can determine if we are serving the torrent the Peer has requested
      */
-    public Peer(Socket socket, TorrentList torrents) throws IOException {
-        startDeath();
+    public Peer(Socket socket, int poop) throws IOException {
         this.socket = socket;
         setStreams();
 
         receiveHandshake();
 
-        torrent = torrents.getTorrent(info_hash);
-        if (torrent == null) {
-            System.out.println("Couldn't find torrent so closed");
-            close();
-            return;
-        }
+        //torrent = torrents.getTorrent(info_hash);
+        //if (torrent == null) {
+            //System.out.println("Couldn't find torrent so closed");
+            //close();
+            //return;
+        //}
 
         sendHandshake();
 
         setBitfield();
-        setDownloader();
-        torrent.addPeer(this);
+        //setDownloader();
+        //torrent.addPeer(this);
         startThreads();
     }
 
-    public Peer(String hostname, int port) {
+    public Peer(String hostname, int port) throws IOException {
         this(new Socket(hostname, port));
-    }
-
-    public PeerStatus status() {
-    }
-
-    private void startDeath() {
-        death = new Death(this);
-        death.start();
     }
 
     private void setStreams() throws IOException {
         in = new DataInputStream(socket.getInputStream());
-        out = socket.getOutputStream();
-        receiver = new Receiver(this, in);
-        responder = new Responder(receiver, this);
+        //out = socket.getOutputStream();
+        //receiver = new Receiver(this, in);
+        //responder = new Responder(receiver, this);
     }
 
     /** sends a handshake
      * <b>{@link torrent}</b> must be set
      */
     public void sendHandshake() throws IOException {
-        send(torrent.handshake);
+        //send(torrent.handshake);
     }
 
     /**
@@ -150,21 +145,22 @@ public class Peer {
     }
 
     private boolean verify() {
-        return Arrays.equals(torrent.info_hash, info_hash);
+        return false;
+        //return Arrays.equals(torrent.info_hash, info_hash);
     }
 
     private void setBitfield() {
-        bitfield = new Bitfield(torrent.pieces.length);
+        //bitfield = new Bitfield(torrent.pieces.length);
     }
 
     private void setDownloader() {
-        downloader = new Downloader(this, torrent.pieces);
+        //downloader = new Downloader(this, torrent.pieces);
     }
 
     private void startThreads() {
-        receiver.start();
-        responder.start();
-        downloader.start();
+        //receiver.start();
+        //responder.start();
+        //downloader.start();
 
     }
 
@@ -174,10 +170,10 @@ public class Peer {
 
     /** called when {@link Peer} recieves a keep-alive message */
     public void keepalive() {
-        synchronized (death) {
-            death.interrupt();
-            death = new Death(this);
-        }
+        //synchronized (death) {
+            //death.interrupt();
+            //death = new Death(this);
+        //}
     }
 
     /** called when {@link Peer} recieves a choke message */
@@ -212,28 +208,30 @@ public class Peer {
     /** called when {@link Peer} recieves a request message */
     public void request(int index, int begin, int length) {
         System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\nresponding to a Reqeust with a Piece");
-        send(new PieceMessage(index, begin, torrent.getChunk(index, begin, length)));
+        //send(new PieceMessage(index, begin, torrent.getChunk(index, begin, length)));
     }
 
     /** called when {@link Peer} recieves a piece message */
     public void piece(int index, int begin, byte[] block) {
-        torrent.addChunk(index, begin, block);
+        //torrent.addChunk(index, begin, block);
     }
 
     public void choke() {
         am_choking.set(true);
-        send(new Choke());
+        //send(new Choke());
     }
 
     public  void unchoke() {
         am_choking.set(false);
-        send(new Unchoke());
+        //send(new Unchoke());
     }
 
     public void interested() {
         am_interested.set(true);
-        send(new Interested());
+        //send(new Interested());
     }
+
+    public void send(Message m) {}
 
     public void notInterested() {
         am_interested.set(false);
@@ -258,27 +256,22 @@ public class Peer {
         return am_interested.get();
     }
 
-    /** closes a {@link Peer} by closing the socket and removing itself from it's {@link Torrent}'s {@link Torrent#peers} */
-    public void close() {
-        System.out.println("CLOSED "+this);
-        if (closed.get()) {
-            return;
-        } else {
-            synchronized (this) {
-                try {
-                    closed.set(true);
-                    socket.close();
-                    death.interrupt();
-                    if (receiver != null) receiver.interrupt();
-                    if (responder != null) responder.interrupt();
-                    if (downloader != null) downloader.interrupt();
-                } catch (IOException e) {
-                    e.printStackTrace(System.out);
-                }
-            }
-        }
-        if (torrent != null) {
-            torrent.removePeer(this);
+    public void shutdownSender() {
+        sender.shutdown();
+    }
+
+    public void shutdownReceiver() {
+        //receiver.shutdown();
+    }
+
+    public void removeFromPeerList() {
+    }
+
+    public synchronized void shutdown() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            System.out.println("Error on closing socket");
         }
     }
 

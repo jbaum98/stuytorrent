@@ -1,3 +1,5 @@
+package stuytorrent;
+
 import java.util.HashMap;
 import java.io.IOException;
 import java.nio.file.Files;

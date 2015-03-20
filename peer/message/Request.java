@@ -1,4 +1,4 @@
-package peer.message;
+package stuytorrent.peer.message;
 
 public class Request extends Message {
     public final int index;

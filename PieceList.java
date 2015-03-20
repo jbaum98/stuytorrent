@@ -1,3 +1,5 @@
+package stuytorrent;
+
 import java.util.LinkedHashSet;
 
 public class PieceList extends LinkedHashSet<Piece> {

@@ -1,4 +1,4 @@
-package peer.message;
+package stuytorrent.peer.message;
 
 import java.util.Arrays;
 

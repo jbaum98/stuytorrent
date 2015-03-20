@@ -1,15 +1,17 @@
-package peer;
+package stuytorrent.peer;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.Arrays;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-public class Receiver extends LoopThread {
-    private final DataInputStream in;
-    private final Peer peer;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
-    public final LinkedBlockingQueue<Message> messages = new LinkedBlockingQueue<Message>(1000);
+public class Receiver {
+    private final DataInputStream in;
+    private final ExecutorService exec = Executors.newSingleThreadExecutor();
+    private final Peer peer;
 
     public Receiver(Peer peer, DataInputStream in) {
         this.peer = peer;
@@ -21,8 +23,6 @@ public class Receiver extends LoopThread {
             int len = in.readInt();
             if (len < 0) {
                 System.out.println("Closed because negative status");
-                peer.close();
-                interrupt();
                 return;
             } else if (len == 0) {
                 messages.put(new KeepAlive());

@@ -1,4 +1,4 @@
-package test;
+package stuytorrent.test;
 
 import java.util.Random;
 import java.util.Arrays;

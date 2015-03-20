@@ -1,5 +1,6 @@
+package stuytorrent;
+
 import java.util.Arrays;
-import stuytorrent.peer.Message;
 
 /**
  * Stores information on which pieces a peer possesses
@@ -16,7 +17,7 @@ public class Bitfield {
         bits = new boolean[pieces];
     }
 
-    public Bitfield(Message message) {
+    public Bitfield(stuytorrent.peer.message.Bitfield message) {
         bits = bytesToBits(message.bitfield);
     }
 

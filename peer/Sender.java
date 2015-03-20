@@ -1,4 +1,4 @@
-package peer;
+package stuytorrent.peer;
 
 import java.io.OutputStream;
 import java.io.IOException;
@@ -7,14 +7,16 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
-import peer.message.Message;
+import stuytorrent.peer.message.Message;
 
 public class Sender {
     private final ExecutorService exec = Executors.newSingleThreadExecutor();
     private final OutputStream out;
+    private final Runnable killPeer;
 
-    public Sender(OutputStream out) {
+    public Sender(OutputStream out, Runnable killPeer) {
         this.out = out;
+        this.killPeer = killPeer;
     }
 
     public void send(byte[] m) {
@@ -25,15 +27,17 @@ public class Sender {
         send(m.toBytes());
     }
 
-    public void alert() {}
-
-    public void shutdown() {
+    public synchronized void shutdown() {
         try {
             out.close();
         } catch (IOException e) {
             System.out.println("Error on sending");
         }
         exec.shutdown();
+    }
+
+    public void closePeer() {
+        (new Thread(killPeer)).start();
     }
 
     class SendTask implements Callable<Void> {
@@ -49,7 +53,7 @@ public class Sender {
             try {
                 out.write(m);
             } catch (IOException e) {
-                Sender.this.alert();
+                Sender.this.closePeer();
             }
             return null;
         }

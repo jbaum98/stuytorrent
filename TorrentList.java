@@ -1,3 +1,5 @@
+package stuytorrent;
+
 import java.util.HashSet;
 
 /** encapsulates a list of Torrents */

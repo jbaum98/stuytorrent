@@ -1,3 +1,5 @@
+package stuytorrent;
+
 public class TorrentRunner extends Thread {
     private Torrent torrent;
    
