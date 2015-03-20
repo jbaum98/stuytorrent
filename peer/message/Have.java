@@ -1,5 +1,7 @@
 package stuytorrent.peer.message;
 
+import stuytorrent.peer.Peer;
+
 public class Have extends Message {
     public final int piece_index;
 
@@ -14,11 +16,26 @@ public class Have extends Message {
         return bytes;
     }
 
-    //public void action(Peer peer) {
-        //peer.have(piece_index);
-    //}
+    public Runnable action(Peer peer) {
+        return new HaveTask(peer.bitfield, piece_index);
+    }
 
     public String toString() {
         return "Have <" + piece_index + ">";
     }
+}
+
+class HaveTask implements Runnable {
+    private final stuytorrent.Bitfield bitfield;
+    private final int piece_index;
+
+    public HaveTask(stuytorrent.Bitfield bitfield, int piece_index) {
+        this.bitfield = bitfield;
+        this.piece_index = piece_index;
+    }
+
+    public void run() {
+        bitfield.setPresent(piece_index);
+    }
+
 }

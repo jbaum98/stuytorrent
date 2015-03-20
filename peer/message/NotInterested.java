@@ -1,5 +1,8 @@
 package stuytorrent.peer.message;
 
+import stuytorrent.peer.Peer;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class NotInterested extends Message {
     public byte[] toBytes() {
         //             |  length  | id |
@@ -7,11 +10,23 @@ public class NotInterested extends Message {
         return bytes;
     }
 
-    //public void action(Peer peer) {
-        //peer.receiveNotInterested();
-    //}
+    public Runnable action(Peer peer) {
+        return new NotInterestedTask(peer.peer_interested);
+    }
 
     public String toString() {
         return "Not Interested";
+    }
+}
+
+class NotInterestedTask implements Runnable {
+    private final AtomicBoolean peer_interested;
+
+    public NotInterestedTask(AtomicBoolean peer_interested) {
+        this.peer_interested = peer_interested;
+    }
+
+    public void run() {
+        peer_interested.set(false);
     }
 }

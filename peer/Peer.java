@@ -34,13 +34,13 @@ public class Peer {
     //private Death death;
 
     /** if HE is chocking ME */
-    private AtomicBoolean peer_choking    = new AtomicBoolean(true);
+    public final AtomicBoolean peer_choking    = new AtomicBoolean(true);
     /** if HE is interested in  ME */
-    private AtomicBoolean peer_interested = new AtomicBoolean(false);
+    public final AtomicBoolean peer_interested = new AtomicBoolean(false);
     /** if I am chocking HIM */
-    private AtomicBoolean am_choking      = new AtomicBoolean(true);
+    public final AtomicBoolean am_choking      = new AtomicBoolean(true);
     /** if I am chocking HIM */
-    private AtomicBoolean am_interested   = new AtomicBoolean(false);
+    public final AtomicBoolean am_interested   = new AtomicBoolean(false);
 
     public Bitfield bitfield;
     private AtomicBoolean closed = new AtomicBoolean(false);
@@ -164,55 +164,12 @@ public class Peer {
 
     }
 
-
-    // MESSAGE METHODS
-    // @see <a href="https://wiki.theory.org/BitTorrentSpecification#Messages">Bit Torrent Specification</a>
-
-    /** called when {@link Peer} recieves a keep-alive message */
-    public void keepalive() {
-        //synchronized (death) {
-            //death.interrupt();
-            //death = new Death(this);
-        //}
+    public byte[] getChunk(int index, int begin, int length) {
+        return new byte[0];
+        //return torrent.getChunk(index, begin, length);
     }
 
-    /** called when {@link Peer} recieves a choke message */
-    public void receiveChoke() {
-        peer_choking.set(true);
-    }
-
-    /** called when {@link Peer} recieves an unchoke message */
-    public void receiveUnchoke() {
-        peer_choking.set(false);
-    }
-
-    /** called when {@link Peer} recieves an interested message */
-    public void receiveInterested() {
-        peer_interested.set(true);
-    }
-
-    /** called when {@link Peer} recieves a not interested message */
-    public void receiveNotInterested() {
-        peer_interested.set(false);
-    }
-
-    /** called when {@link Peer} recieves a have message */
-    public void have(int piece_index) {
-        bitfield.setPresent(piece_index);
-    }
-
-    public void bitfield(byte[] bytes) {
-        bitfield.override(bytes);
-    }
-
-    /** called when {@link Peer} recieves a request message */
-    public void request(int index, int begin, int length) {
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\nresponding to a Reqeust with a Piece");
-        //send(new PieceMessage(index, begin, torrent.getChunk(index, begin, length)));
-    }
-
-    /** called when {@link Peer} recieves a piece message */
-    public void piece(int index, int begin, byte[] block) {
+    public void submitChunk(int index, int begin, byte[] block) {
         //torrent.addChunk(index, begin, block);
     }
 
@@ -221,7 +178,7 @@ public class Peer {
         //send(new Choke());
     }
 
-    public  void unchoke() {
+    public void unchoke() {
         am_choking.set(false);
         //send(new Unchoke());
     }
@@ -231,12 +188,12 @@ public class Peer {
         //send(new Interested());
     }
 
-    public void send(Message m) {}
-
     public void notInterested() {
         am_interested.set(false);
         send(new NotInterested());
     }
+
+    public void send(Message m) {}
 
     // CHOKED/INTERESTED GETTERS
 
@@ -265,6 +222,10 @@ public class Peer {
     }
 
     public void removeFromPeerList() {
+    }
+
+    public Sender getSender() {
+        return sender;
     }
 
     public synchronized void shutdown() {

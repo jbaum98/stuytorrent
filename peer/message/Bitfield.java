@@ -1,6 +1,7 @@
 package stuytorrent.peer.message;
 
 import java.util.Arrays;
+import stuytorrent.peer.Peer;
 
 public class Bitfield extends Message {
     public final byte[] bitfield;
@@ -30,11 +31,25 @@ public class Bitfield extends Message {
 
     }
 
-    //public void action(Peer peer) {
-        //peer.bitfield(bitfield);
-    //}
+    public Runnable action(Peer peer) {
+        return new BitfieldTask(peer.bitfield, bitfield);
+    }
 
     public String toString() {
         return "Bitfield " + Arrays.toString(bitfield);
+    }
+}
+
+class BitfieldTask implements Runnable {
+    private final stuytorrent.Bitfield bitfield;
+    private final byte[] bytes;
+
+    public BitfieldTask(stuytorrent.Bitfield bitfield, byte[] bytes) {
+        this.bitfield = bitfield;
+        this.bytes = bytes;
+    }
+
+    public void run() {
+        bitfield.override(bytes);
     }
 }

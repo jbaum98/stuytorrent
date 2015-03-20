@@ -1,11 +1,13 @@
 package stuytorrent.peer.message;
 
 import java.util.Arrays;
+import stuytorrent.peer.Peer;
 
 public abstract class Message {
     public abstract byte[] toBytes();
-    //public abstract void action(Peer peer);
     public abstract String toString();
+
+    public abstract Runnable action(Peer peer);
 
     protected static byte[] intToBytes(int integer) {
         byte[] out = new byte[4];

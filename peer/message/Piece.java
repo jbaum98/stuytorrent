@@ -1,5 +1,8 @@
 package stuytorrent.peer.message;
 
+import stuytorrent.peer.Peer;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class Piece extends Message {
     public final int index;
     public final int begin;
@@ -25,11 +28,30 @@ public class Piece extends Message {
         return bytes;
     }
 
-    //public void action(Peer peer) {
-        //peer.piece(index, begin, block);
-    //}
+    public Runnable action(Peer peer) {
+        return new PieceTask(index, begin, block, peer);
+    }
 
     public String toString() {
         return "Piece <index " + index + "> <begin: " + begin + ">";
+    }
+}
+
+class PieceTask implements Runnable {
+    //private final Torrent torrent;
+    private final Peer peer;
+    private final int index;
+    private final int begin;
+    private final byte[] block;
+
+    public PieceTask(int index, int begin, byte[] block, Peer peer) {
+        this.index = index;
+        this.begin = begin;
+        this.block = block;
+        this.peer = peer;
+    }
+
+    public void run() {
+        peer.submitChunk(index, begin, block);
     }
 }

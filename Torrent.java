@@ -203,7 +203,7 @@ public class Torrent {
 class PeerToBe extends Thread {
     private String hostname;
     private int port;
-    private Torrent torrent; 
+    private Torrent torrent;
 
     public PeerToBe(String hostname, int port, Torrent torrent) {
         this.hostname = hostname;
