@@ -1,3 +1,5 @@
+package peer;
+
 public class Responder extends LoopThread {
     private final Receiver receiver;
     private final Peer     peer;

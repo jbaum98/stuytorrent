@@ -1,3 +1,5 @@
+package peer;
+
 import java.net.Socket;
 import java.io.IOException;
 import java.io.DataInputStream;
@@ -6,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Arrays;
+import stuytorrent.Bitfield;
 
 /**
  * represents another torrent Client to which we are connected

@@ -1,8 +1,13 @@
+package peer;
+
 import java.io.OutputStream;
 import java.io.IOException;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+
+import peer.message.Message;
 
 public class Sender {
     private final ExecutorService exec = Executors.newSingleThreadExecutor();
@@ -21,6 +26,15 @@ public class Sender {
     }
 
     public void alert() {}
+
+    public void shutdown() {
+        try {
+            out.close();
+        } catch (IOException e) {
+            System.out.println("Error on sending");
+        }
+        exec.shutdown();
+    }
 
     class SendTask implements Callable<Void> {
         private final byte[] m;
