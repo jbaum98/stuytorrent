@@ -1,6 +1,5 @@
 import java.net.Socket;
 import java.io.IOException;
-import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -11,16 +10,16 @@ import java.util.Arrays;
 /**
  * represents another torrent Client to which we are connected
  */
-public class Peer implements Closeable, AutoCloseable {
+public class Peer {
     private static final Charset charset = StandardCharsets.ISO_8859_1;
     public  Socket socket;
     private DataInputStream in;
-    private Receiver            receiver;
-    private OutputStream        out;
-    private Responder           responder;
-    private Downloader          downloader;
+    private Receiver        receiver;
+    private Sender          sender;
+    private Responder       responder;
+    private Downloader      downloader;
 
-    public Torrent torrent;
+    public Torrent torrent = null;
 
     private String id;
     private byte[] info_hash;
@@ -43,8 +42,8 @@ public class Peer implements Closeable, AutoCloseable {
      * @param socket  the {@link java.net.Socket} to the Peer
      * @param torrent the {@link Torrent} for which we want to download make a connection
      */
-    public Peer(Socket socket, Torrent torrent) throws IOException {
-        startDeath();
+    public Peer(Socket socket) {
+        //startDeath();
         this.socket = socket;
         setStreams();
         this.torrent = torrent;
@@ -95,6 +94,13 @@ public class Peer implements Closeable, AutoCloseable {
         setDownloader();
         torrent.addPeer(this);
         startThreads();
+    }
+
+    public Peer(String hostname, int port) {
+        this(new Socket(hostname, port));
+    }
+
+    public PeerStatus status() {
     }
 
     private void startDeath() {
@@ -159,25 +165,6 @@ public class Peer implements Closeable, AutoCloseable {
 
     }
 
-    public void send(byte[] message) {
-        try {
-            synchronized (out) {
-                out.write(message);
-            }
-        } catch (IOException e) {
-            System.out.println("Error on send");
-            close();
-        }
-    }
-
-    public void send(String message) {
-        // System.out.println("Sending " + message + " to " +this);
-        send(message.getBytes());
-    }
-
-    public void send(Message message) {
-        send(message.toBytes());
-    }
 
     // MESSAGE METHODS
     // @see <a href="https://wiki.theory.org/BitTorrentSpecification#Messages">Bit Torrent Specification</a>
@@ -310,3 +297,5 @@ public class Peer implements Closeable, AutoCloseable {
     }
 
 }
+
+enum PeerStatus { NOOB, READY, CONNECTED }
