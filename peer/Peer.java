@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 import stuytorrent.Bitfield;
 //import stuytorrent.Torrent;
@@ -18,7 +20,7 @@ import stuytorrent.peer.message.*;
  * represents another torrent Client to which we are connected
  */
 public class Peer {
-    private static final Charset charset = StandardCharsets.ISO_8859_1;
+    private final ExecutorService exec = Executors.newSingleThreadExecutor();
     public  Socket socket;
     private DataInputStream in;
     //private Receiver        receiver;
@@ -106,6 +108,10 @@ public class Peer {
         this(new Socket(hostname, port));
     }
 
+    public void takeAction(Message m) {
+        exec.submit(m.action(this));
+    }
+
     private void setStreams() throws IOException {
         in = new DataInputStream(socket.getInputStream());
         //out = socket.getOutputStream();
@@ -141,7 +147,7 @@ public class Peer {
 
         peer_id_bytes = new byte[20];
         in.read(peer_id_bytes);
-        id = new String(peer_id_bytes, charset);
+        id = new String(peer_id_bytes, stuytorrent.Globals.CHARSET);
     }
 
     private boolean verify() {
@@ -171,6 +177,10 @@ public class Peer {
 
     public void submitChunk(int index, int begin, byte[] block) {
         //torrent.addChunk(index, begin, block);
+    }
+
+    public Runnable getKillPeer() {
+        return new KillPeerTask(this);
     }
 
     public void choke() {

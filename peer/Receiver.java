@@ -8,81 +8,95 @@ import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
+import stuytorrent.peer.message.*;
+
 public class Receiver {
     private final DataInputStream in;
-    private final ExecutorService exec = Executors.newSingleThreadExecutor();
     private final Peer peer;
+    private final Runnable killPeer;
+    private boolean isRunning = true;
 
     public Receiver(Peer peer, DataInputStream in) {
         this.peer = peer;
+        killPeer = peer.getKillPeer();
         this.in = in;
     }
 
-    protected void task() {
-        try{
+    public void run() {
+        while (isRunning) {
+        try {
             int len = in.readInt();
+            Message message;
             if (len < 0) {
                 System.out.println("Closed because negative status");
-                return;
+                closePeer();
             } else if (len == 0) {
-                messages.put(new KeepAlive());
+                message = new KeepAlive();
                 return;
             } else {
                 byte id = in.readByte();
-                Message message = null;
                 int index, begin, piece_index, length;
                 switch (id) {
-                case 0:
-                    message = new Choke();
-                    break;
-                case 1:
-                    message = new Unchoke();
-                    break;
-                case 2:
-                    message = new Interested();
-                    System.out.println("interested! " + peer);
-                    break;
-                case 3:
-                    message = new NotInterested();
-                    break;
-                case 4:
-                    piece_index = in.readInt();
-                    message = new Have(piece_index);
-                    break;
-                case 5:
-                    byte[] bitfield = new byte[len-1];
-                    in.readFully(bitfield);
-                    //System.out.println(Arrays.toString(bitfield));
-                    message = new BitfieldMessage(bitfield);
-                    break;
-                case 6:
-                    index  = in.readInt();
-                    begin  = in.readInt();
-                    length = in.readInt();
-                    message = new Request(index, begin, length);
-                    System.out.println("request from " + peer);
-                    break;
-                case 7:
-                    index  = in.readInt();
-                    begin  = in.readInt();
-                    byte[] block  = new byte[len-9];
-                    in.readFully(block);
-                    message = new PieceMessage(index, begin, block);
-                    break;
+                    case 0:
+                        message = new Choke();
+                        break;
+                    case 1:
+                        message = new Unchoke();
+                        break;
+                    case 2:
+                        message = new Interested();
+                        System.out.println("interested! " + peer);
+                        break;
+                    case 3:
+                        message = new NotInterested();
+                        break;
+                    case 4:
+                        piece_index = in.readInt();
+                        message = new Have(piece_index);
+                        break;
+                    case 5:
+                        byte[] bitfield = new byte[len-1];
+                        in.readFully(bitfield);
+                        //System.out.println(Arrays.toString(bitfield));
+                        message = new Bitfield(bitfield);
+                        break;
+                    case 6:
+                        index  = in.readInt();
+                        begin  = in.readInt();
+                        length = in.readInt();
+                        message = new Request(index, begin, length);
+                        System.out.println("request from " + peer);
+                        break;
+                    case 7:
+                        index  = in.readInt();
+                        begin  = in.readInt();
+                        byte[] block  = new byte[len-9];
+                        in.readFully(block);
+                        message = new Piece(index, begin, block);
+                        break;
+                    default:
+                        closePeer();
+                        return;
                 }
-                if (message != null) {
-                    messages.put(message);
-                }
+                peer.takeAction(message);
             }
         } catch (IOException e) {
-            interrupt();
-            System.out.println("closed becuase error on read");
-            peer.close();
-            return;
-        } catch (InterruptedException e) {
-            interrupt();
+            System.out.println("Error on read");
+            closePeer();
+        }
         }
     }
 
-    protected void cleanup() {}
+    public synchronized void shutdown() {
+        isRunning = false;
+        try {
+            in.close();
+        } catch (IOException e) {
+            System.out.println("Error closing InputStream");
+        }
+    }
+
+    public void closePeer() {
+        (new Thread(killPeer)).start();
+    }
 }

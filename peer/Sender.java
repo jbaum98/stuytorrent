@@ -3,7 +3,6 @@ package stuytorrent.peer;
 import java.io.OutputStream;
 import java.io.IOException;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
@@ -20,7 +19,7 @@ public class Sender {
     }
 
     public void send(byte[] m) {
-        exec.submit(new SendTask(m));
+        exec.submit(new SendTask(this, out, m));
     }
 
     public void send(Message m) {
@@ -28,35 +27,37 @@ public class Sender {
     }
 
     public synchronized void shutdown() {
+        exec.shutdown();
         try {
             out.close();
         } catch (IOException e) {
-            System.out.println("Error on sending");
+            System.out.println("Error closing OutputStream");
         }
-        exec.shutdown();
     }
 
     public void closePeer() {
         (new Thread(killPeer)).start();
     }
+}
 
-    class SendTask implements Callable<Void> {
-        private final byte[] m;
+class SendTask implements Runnable {
+    private final Sender sender;
+    private final byte[] m;
+    private final OutputStream out;
 
-        public SendTask(byte[] m) {
-            this.m   = m;
-        }
-
-        @Override
-        public Void call() throws Exception {
-            Integer status = 0; // 0 is all good
-            try {
-                out.write(m);
-            } catch (IOException e) {
-                Sender.this.closePeer();
-            }
-            return null;
-        }
+    public SendTask(Sender sender, OutputStream out, byte[] m) {
+        this.sender = sender;
+        this.out = out;
+        this.m   = m;
     }
 
+    public void run() {
+        Integer status = 0; // 0 is all good
+        try {
+            out.write(m);
+        } catch (IOException e) {
+            System.out.println("Error on sending");
+            sender.closePeer();
+        }
+    }
 }
