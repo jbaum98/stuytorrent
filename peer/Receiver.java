@@ -3,10 +3,7 @@ package stuytorrent.peer;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.Arrays;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
 
 import stuytorrent.peer.message.*;
 
@@ -16,9 +13,9 @@ public class Receiver {
     private final Runnable killPeer;
     private boolean isRunning = true;
 
-    public Receiver(Peer peer, DataInputStream in) {
+    public Receiver(Peer peer, DataInputStream in, Runnable killPeer) {
         this.peer = peer;
-        killPeer = peer.getKillPeer();
+        this.killPeer = killPeer;
         this.in = in;
     }
 

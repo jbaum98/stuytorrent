@@ -22,16 +22,12 @@ import stuytorrent.peer.message.*;
 public class Peer {
     private final ExecutorService exec = Executors.newSingleThreadExecutor();
     public  Socket socket;
-    private DataInputStream in;
-    //private Receiver        receiver;
+    private Receiver        receiver;
     private Sender          sender;
-    //private Responder       responder;
     //private Downloader      downloader;
 
     //public Torrent torrent = null;
-
-    private String id;
-    private byte[] info_hash;
+    private String id; private byte[] info_hash;
 
     //private Death death;
 
@@ -60,7 +56,7 @@ public class Peer {
         sendHandshake();
         System.out.println("sent handshake");
 
-        receiveHandshake();
+        //receiveHandshake();
         System.out.println("received handshake");
 
         if (!verify()) {
@@ -87,13 +83,13 @@ public class Peer {
         this.socket = socket;
         setStreams();
 
-        receiveHandshake();
+        //receiveHandshake();
 
         //torrent = torrents.getTorrent(info_hash);
         //if (torrent == null) {
-            //System.out.println("Couldn't find torrent so closed");
-            //close();
-            //return;
+        //System.out.println("Couldn't find torrent so closed");
+        //close();
+        //return;
         //}
 
         sendHandshake();
@@ -108,15 +104,9 @@ public class Peer {
         this(new Socket(hostname, port));
     }
 
-    public void takeAction(Message m) {
-        exec.submit(m.action(this));
-    }
-
     private void setStreams() throws IOException {
-        in = new DataInputStream(socket.getInputStream());
-        //out = socket.getOutputStream();
-        //receiver = new Receiver(this, in);
-        //responder = new Responder(receiver, this);
+        receiver = new Receiver(this, new DataInputStream(socket.getInputStream()), getKillPeer());
+        sender = new Sender(socket.getOutputStream(), getKillPeer());
     }
 
     /** sends a handshake
@@ -130,25 +120,26 @@ public class Peer {
      * receives a handshake and sets {@link id} and {@link info_hash}
      * @return the info_hash from the handshake
      */
-    public void receiveHandshake() throws IOException {
-        byte[] pstrlen, pstr, reserved, peer_id_bytes;
+    // TODO move to Receiver
+    /*public void receiveHandshake() throws IOException {
+      byte[] pstrlen, pstr, reserved, peer_id_bytes;
 
-        pstrlen = new byte[1];
-        in.read(pstrlen);
+      pstrlen = new byte[1];
+      in.read(pstrlen);
 
-        pstr = new byte[pstrlen[0]];
-        in.read(pstr);
+      pstr = new byte[pstrlen[0]];
+      in.read(pstr);
 
-        reserved = new byte[8];
-        in.read(reserved);
+      reserved = new byte[8];
+      in.read(reserved);
 
-        info_hash = new byte[20];
-        System.out.println("read " + in.read(info_hash));
+      info_hash = new byte[20];
+      System.out.println("read " + in.read(info_hash));
 
-        peer_id_bytes = new byte[20];
-        in.read(peer_id_bytes);
-        id = new String(peer_id_bytes, stuytorrent.Globals.CHARSET);
-    }
+      peer_id_bytes = new byte[20];
+      in.read(peer_id_bytes);
+      id = new String(peer_id_bytes, stuytorrent.Globals.CHARSET);
+      }*/
 
     private boolean verify() {
         return false;
@@ -232,6 +223,10 @@ public class Peer {
     }
 
     public void removeFromPeerList() {
+    }
+
+    public void takeAction(Message m) {
+        exec.submit(m.action(this));
     }
 
     public Sender getSender() {
